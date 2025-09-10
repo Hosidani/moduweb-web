@@ -1,14 +1,62 @@
-
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+// @ts-ignore
+import { loginUser } from '../api/login';
+import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
+  const { setUser } = useAuth();
   const navigate = useNavigate();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleLogin = async () => {
+    setError('');
+    try {
+      const loginResult = await loginUser({ username, password });
+      console.log('User returned from loginUser:', loginResult);
+      // Fetch full user object using username (or userName)
+      const fullUser = await getUserByUsername(loginResult.username);
+      setUser(fullUser ?? null);
+      localStorage.setItem('user', JSON.stringify(fullUser));
+      navigate('/dashboard');
+    } catch (err) {
+      setError('Login failed');
+    }
+  };
+
+  // Helper to fetch user by username (since your backend expects id, you need a getUserByUsername API)
+  async function getUserByUsername(username: string) {
+    // Fetch all users and find by username (inefficient, but works if no direct endpoint)
+    const { getUsers } = await import('../api/user');
+    const users = await getUsers();
+    return users.find((u: any) => u.userName === username);
+  }
+
   return (
     <div className="p-6 bg-gray-100 min-h-screen flex items-center justify-center">
       <div className="bg-white rounded shadow p-8 w-full max-w-md">
         <h2 className="text-2xl font-bold mb-4">Login Page</h2>
         <p className="mb-6">Please log in to continue.</p>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">
+        <input
+          type="text"
+          placeholder="Username"
+          className="mb-4 p-2 border rounded w-full"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          className="mb-6 p-2 border rounded w-full"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+        />
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full"
+          onClick={handleLogin}
+        >
           Log In
         </button>
         <button
@@ -17,6 +65,7 @@ const LoginPage = () => {
         >
           Create User
         </button>
+        {error && <div className="text-red-600 mt-2">{error}</div>}
       </div>
     </div>
   );
