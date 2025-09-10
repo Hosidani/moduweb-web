@@ -5,6 +5,7 @@ import PrivacyPage from "./pages/PrivacyPage";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import BookingPage from "./pages/BookingPage";
+import CreateUserPage from "./pages/CreateUserPage";
 import BaseLayout from "./components/BaseLayout";
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
           <Route path="/about" element={<AboutPage />} />   {/* About Us */}
           <Route path="/privacy" element={<PrivacyPage />} /> {/* Privacy */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/create-user" element={<CreateUserPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/booking" element={<BookingPage />} />
         </Routes>
