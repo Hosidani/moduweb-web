@@ -1,4 +1,4 @@
-import { safeParseJSON, formatSlotTime } from '../utils/helpers';
+import { safeParseJSON } from '../utils/helpers';
 
 interface AvailabilityListProps {
   resourceContent: string; // the JSON string from resource.content
@@ -6,23 +6,34 @@ interface AvailabilityListProps {
 
 const AvailabilityList: React.FC<AvailabilityListProps> = ({ resourceContent }) => {
   const content = safeParseJSON(resourceContent);
+
   if (!content || !content.availabilities) return <div>Inga tider hittades.</div>;
 
-  const handleBookSlot = (day: string, slotStart: string, slotEnd: string) => {
-    alert(`Du har valt: ${day} ${slotStart} - ${slotEnd}`);
+  // Hardcoded/default values
+  const DEFAULT_START_TIME = "09:00";
+  const DEFAULT_SLOT_LENGTH = 30;
+
+  function formatSlotTime(start: string, index: number, length: number) {
+    const [h, m] = start.split(':').map(Number);
+    const date = new Date(0, 0, 0, h, m + index * length);
+    return date.toTimeString().slice(0, 5);
+  }
+
+  const handleBookSlot = (slotStart: string, slotEnd: string) => {
+    alert(`Du har valt: ${slotStart} - ${slotEnd}`);
     // Here you can open a booking form or send a booking request
   };
 
   return (
     <div>
       <h3 className="text-lg font-bold mb-4 bg-green-200 text-green-900 px-3 py-2 rounded inline-block">Lediga tider</h3>
-      {content.availabilities.map((a: any) => (
+      {content.availabilities.map((a: any, dayIndex: number) => (
         <div key={a.id} className="mb-4">
-          <div className="font-bold mb-2 bg-gray-100 text-gray-700 px-2 py-1 rounded inline-block">{a.dayOfWeek}</div>
+          <div className="font-bold mb-2 bg-gray-100 text-gray-700 px-2 py-1 rounded inline-block">Dag {dayIndex + 1}</div>
           <ul className="flex flex-wrap gap-2">
             {a.slots.map((available: boolean, i: number) => {
-              const slotStart = formatSlotTime(a.startTime, i, a.slotLengthMinutes);
-              const slotEnd = formatSlotTime(a.startTime, i + 1, a.slotLengthMinutes);
+              const slotStart = formatSlotTime(DEFAULT_START_TIME, i, DEFAULT_SLOT_LENGTH);
+              const slotEnd = formatSlotTime(DEFAULT_START_TIME, i + 1, DEFAULT_SLOT_LENGTH);
               return (
                 <li
                   key={i}
@@ -32,7 +43,7 @@ const AvailabilityList: React.FC<AvailabilityListProps> = ({ resourceContent }) 
                       : 'bg-gray-200 text-gray-400 px-3 py-1 rounded line-through shadow-sm'
                   }
                   style={{ minWidth: 110, textAlign: 'center', cursor: available ? 'pointer' : 'default' }}
-                  onClick={available ? () => handleBookSlot(a.dayOfWeek, slotStart, slotEnd) : undefined}
+                  onClick={available ? () => handleBookSlot(slotStart, slotEnd) : undefined}
                 >
                   {slotStart} - {slotEnd}
                 </li>

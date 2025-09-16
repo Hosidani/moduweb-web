@@ -12,27 +12,3 @@ export declare function safeParseJSON<T = any>(input: string, fallback?: T | nul
 export declare function getResourceContent(resource: {
     content: string;
 }): any;
-/**
- * Retrieves the name from the resource content.
- * @param resource The resource object
- * @returns The name from the resource content, or an empty string if not available
- */
-export declare function getResourceName(resource: {
-    content: string;
-}): any;
-/**
- * Retrieves the availabilities from the resource content.
- * @param resource The resource object
- * @returns The availabilities from the resource content, or an empty array if not available
- */
-export declare function getAvailabilities(resource: {
-    content: string;
-}): any;
-/**
- * Formats the slot time based on the start time, index, and length.
- * @param start The start time in HH:mm format
- * @param index The index of the slot
- * @param length The length of the slot in minutes
- * @returns The formatted slot time in HH:mm format
- */
-export declare function formatSlotTime(start: string, index: number, length: number): string;
