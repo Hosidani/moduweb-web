@@ -8,9 +8,14 @@ const AvailabilityList: React.FC<AvailabilityListProps> = ({ resourceContent }) 
   const content = safeParseJSON(resourceContent);
   if (!content || !content.availabilities) return <div>Inga tider hittades.</div>;
 
+  const handleBookSlot = (day: string, slotStart: string, slotEnd: string) => {
+    alert(`Du har valt: ${day} ${slotStart} - ${slotEnd}`);
+    // Here you can open a booking form or send a booking request
+  };
+
   return (
     <div>
-  <h3 className="text-lg font-bold mb-4 bg-green-200 text-green-900 px-3 py-2 rounded inline-block">Lediga tider</h3>
+      <h3 className="text-lg font-bold mb-4 bg-green-200 text-green-900 px-3 py-2 rounded inline-block">Lediga tider</h3>
       {content.availabilities.map((a: any) => (
         <div key={a.id} className="mb-4">
           <div className="font-bold mb-2 bg-gray-100 text-gray-700 px-2 py-1 rounded inline-block">{a.dayOfWeek}</div>
@@ -23,10 +28,11 @@ const AvailabilityList: React.FC<AvailabilityListProps> = ({ resourceContent }) 
                   key={i}
                   className={
                     available
-                      ? 'bg-green-100 text-green-800 px-3 py-1 rounded font-medium shadow-sm'
+                      ? 'bg-green-100 text-green-800 px-3 py-1 rounded font-medium shadow-sm cursor-pointer hover:bg-green-300 transition'
                       : 'bg-gray-200 text-gray-400 px-3 py-1 rounded line-through shadow-sm'
                   }
-                  style={{ minWidth: 90, textAlign: 'center' }}
+                  style={{ minWidth: 110, textAlign: 'center', cursor: available ? 'pointer' : 'default' }}
+                  onClick={available ? () => handleBookSlot(a.dayOfWeek, slotStart, slotEnd) : undefined}
                 >
                   {slotStart} - {slotEnd}
                 </li>
