@@ -1,6 +1,10 @@
-interface ResourceListProps {
-    onSelectResource: (id: string) => void;
-    selectedResourceId: string | null;
+interface Resource {
+    id: number;
+    content: string;
 }
-declare function ResourceList({ onSelectResource, selectedResourceId }: ResourceListProps): import("react/jsx-runtime").JSX.Element;
+interface ResourceListProps {
+    onSelectResource: (resource: Resource) => void;
+    selectedResource: Resource | null;
+}
+declare function ResourceList({ onSelectResource, selectedResource }: ResourceListProps): import("react/jsx-runtime").JSX.Element;
 export default ResourceList;

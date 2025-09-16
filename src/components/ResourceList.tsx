@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getResourceContent } from '../utils/helpers';
 
 interface Resource {
   id: number;
@@ -6,11 +7,11 @@ interface Resource {
 }
 
 interface ResourceListProps {
-  onSelectResource: (id: string) => void;
-  selectedResourceId: string | null;
+  onSelectResource: (resource: Resource) => void;
+  selectedResource: Resource | null;
 }
 
-function ResourceList({ onSelectResource, selectedResourceId }: ResourceListProps) {
+function ResourceList({ onSelectResource, selectedResource }: ResourceListProps) {
   const [resources, setResources] = useState<Resource[]>([]);
 
   useEffect(() => {
@@ -24,23 +25,20 @@ function ResourceList({ onSelectResource, selectedResourceId }: ResourceListProp
       <h2 className="text-xl font-bold mb-4 text-gray-700">Resurser</h2>
       <ul className="space-y-2">
         {resources.map(r => {
-          let content: any = r.content;
-          if (typeof content === 'string') {
-            try {
-              content = JSON.parse(content);
-            } catch {
-              content = { name: content, type: '', description: '' };
-            }
-          }
-          const isSelected = selectedResourceId === String(r.id);
+          const content = getResourceContent(r);
+          const name = content.name || '';
+          const type = content.type || '';
+          const description = content.description || '';
+
+          const isSelected = selectedResource?.id === r.id;
           return (
             <li
               key={r.id}
-              onClick={() => onSelectResource(String(r.id))}
+              onClick={() => onSelectResource(r)}
               className={`px-4 py-2 rounded cursor-pointer border transition-colors duration-150 ${isSelected ? 'bg-blue-600 text-white font-bold border-blue-700' : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-100'}`}
               style={{ userSelect: 'none' }}
             >
-              {content.name} {content.type && `(${content.type})`} {content.description && `- ${content.description}`}
+              {name} {type && `(${type})`} {description && `- ${description}`}
             </li>
           );
         })}

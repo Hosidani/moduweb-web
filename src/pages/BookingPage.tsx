@@ -1,9 +1,17 @@
 import { useState } from 'react';
 
 import ResourceList from '../components/ResourceList';
+import AvailabilityList from '../components/AvailabilityList';
+
+
+interface Resource {
+  id: number;
+  content: string;
+}
 
 const BookingPage = () => {
-  const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+
   return (
     <div className="p-6 bg-gray-800 min-h-screen">
       <h2 className="text-2xl font-bold mb-4 text-gray-100">Booking</h2>
@@ -13,10 +21,19 @@ const BookingPage = () => {
           <button className="bg-blue-600 text-white px-6 py-3 rounded mb-8 font-bold hover:bg-blue-700">
             Boka nu
           </button>
-          <ResourceList onSelectResource={setSelectedResourceId} selectedResourceId={selectedResourceId} />
+          <ResourceList
+            onSelectResource={setSelectedResource}
+            selectedResource={selectedResource}
+          />
         </div>
         <div className="md:w-2/3 w-full">
-          <div className="text-gray-500 text-lg flex items-center justify-center h-full">Välj en resurs för att se lediga tider</div>
+          {selectedResource ? (
+            <AvailabilityList resourceContent={selectedResource.content} />
+          ) : (
+            <div className="text-gray-500 text-lg flex items-center justify-center h-full">
+              Välj en resurs för att se lediga tider
+            </div>
+          )}
         </div>
       </div>
     </div>
