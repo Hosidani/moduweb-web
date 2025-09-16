@@ -8,7 +8,12 @@ function ResourceList({ onSelectResource, selectedResource }) {
             .then(res => res.json())
             .then(data => setResources(data));
     }, []);
-    return (_jsxs("div", { className: "bg-gray-50 border border-gray-300 rounded-lg p-4 shadow-sm", children: [_jsx("h2", { className: "text-xl font-bold mb-4 text-gray-700", children: "Resurser" }), _jsx("ul", { className: "space-y-2", children: resources.map(r => {
+    return (_jsxs("div", { className: "bg-gray-50 border border-gray-300 rounded-lg p-4 shadow-sm", children: [_jsx("h2", { className: "text-xl font-bold mb-4 text-gray-700", children: "Resurser" }), _jsx("ul", { className: "space-y-2", children: resources
+                    .filter(r => {
+                    const content = getResourceContent(r);
+                    return content && Array.isArray(content.availabilities) && content.availabilities.length > 0;
+                })
+                    .map(r => {
                     const content = getResourceContent(r);
                     const name = content.name || '';
                     const type = content.type || '';
