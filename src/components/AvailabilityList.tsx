@@ -46,12 +46,22 @@ const AvailabilityList: React.FC<AvailabilityListProps> = ({ resourceContent, on
                   className={
                     available
                       ? 'bg-green-100 text-green-800 px-3 py-1 rounded font-medium shadow-sm cursor-pointer hover:bg-green-300 transition'
-                      : 'bg-gray-200 text-gray-400 px-3 py-1 rounded line-through shadow-sm'
+                      : 'bg-gray-200 text-gray-400 px-3 py-1 rounded line-through shadow-sm flex items-center justify-between'
                   }
-                  style={{ minWidth: 110, textAlign: 'center', cursor: available ? 'pointer' : 'default' }}
+                  style={{ minWidth: 110, textAlign: 'center', cursor: available ? 'pointer' : 'default', position: 'relative' }}
                   onClick={available ? () => handleBookSlot(slotStart, slotEnd, slotId, i+1) : undefined}
                 >
-                  {slotStart} - {slotEnd}
+                  <span>{slotStart} - {slotEnd}</span>
+                  {!available && (
+                    <button
+                      type="button"
+                      className="ml-2 px-2 py-0.5 text-xs rounded bg-red-500 text-white hover:bg-red-700 transition"
+                      onClick={e => {
+                        e.stopPropagation();
+                        if (onSlotClick) onSlotClick(slotStart, slotId, i+1); // Återanvänd callback för avbokning
+                      }}
+                    >Avboka</button>
+                  )}
                 </li>
               );
             })}
