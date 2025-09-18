@@ -1,4 +1,8 @@
 /**
+ * Hitta bokningsnamn för en slot i ett resource-content-objekt
+ */
+export declare function getBookingName(contentObj: any, dayNum: number, slotKey: string): string;
+/**
  * Safely parses a JSON string. Returns the parsed object, or fallback if parsing fails.
  * @param input The JSON string to parse
  * @param fallback The value to return if parsing fails (default: null)

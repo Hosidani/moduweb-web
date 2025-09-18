@@ -1,5 +1,5 @@
 // Hämta alla bokningar (resources med Content som har id, name, email)
-export async function findBookingResourceId({ slotId, name, email }) {
+export async function findBookingResourceId({ resourceId, day, slot, name }) {
     const response = await fetch('https://localhost:5083/api/resources');
     if (!response.ok)
         throw new Error('Kunde inte hämta resurser');
@@ -7,9 +7,10 @@ export async function findBookingResourceId({ slotId, name, email }) {
     for (const r of resources) {
         try {
             const content = JSON.parse(r.content);
-            if (content.id === slotId &&
-                content.name === name &&
-                content.email === email) {
+            if (content.resourceId === resourceId &&
+                content.day === day &&
+                content.slot === slot &&
+                (!name || content.name === name)) {
                 return r.id;
             }
         }
@@ -52,13 +53,4 @@ export async function createResourceBooking({ resourceId, day, slot, name, email
     if (!response.ok)
         throw new Error('Kunde inte skapa bokning');
     return await response.json();
-}
-export async function deleteBooking({ slotId, name, email }) {
-    const response = await fetch('https://localhost:5083/api/resources/booking', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slotId, name, email }),
-    });
-    if (!response.ok)
-        throw new Error('Kunde inte avboka');
 }

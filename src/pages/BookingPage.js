@@ -3,19 +3,51 @@ import { useState } from 'react';
 import ResourceList from '../components/ResourceList';
 import AvailabilityList from '../components/AvailabilityList';
 import { createResourceBooking, updateResourceSlot, findBookingResourceId, deleteBookingResource } from '../api/resourceApi';
-import { getResourceContent } from '../utils/helpers';
+import { getResourceContent, getBookingName } from '../utils/helpers';
 const BookingPage = () => {
     const [selectedResource, setSelectedResource] = useState(null);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [customerName, setCustomerName] = useState('');
+    const [bookingPersonName, setBookingPersonName] = useState('');
     const [customerEmail, setCustomerEmail] = useState('');
+    const [deleteConfirm, setDeleteConfirm] = useState('');
     const [showBookingForm, setShowBookingForm] = useState(false);
     const [bookingMode, setBookingMode] = useState('book');
     // Callback när en slot klickas i AvailabilityList
     // mode = 'book' eller 'cancel'
-    const handleSlotClick = (slotTime, slotId, slotIndex, mode = 'book') => {
+    const handleSlotClick = async (slotTime, slotId, slotIndex, mode = 'book') => {
         setSelectedSlot({ time: slotTime, slotId, slotIndex });
         setBookingMode(mode);
+        if (mode === 'cancel' && selectedResource) {
+            // Hämta namn från boknings-resource
+            const [dayNumStr, slotNumStr] = slotId.split('-');
+            const dayNum = Number(dayNumStr);
+            const slotKey = `slot${slotNumStr}`;
+            // Hitta boknings-resource
+            const bookingId = await findBookingResourceId({
+                resourceId: String(selectedResource.id),
+                day: dayNum,
+                slot: slotKey,
+                name: '' // tomt, vi vill hitta oavsett namn
+            });
+            let name = '';
+            if (bookingId) {
+                // Hämta boknings-resource och plocka ut namn
+                try {
+                    const res = await fetch(`https://localhost:5083/api/resources/${bookingId}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        const content = JSON.parse(data.content);
+                        name = content.name || '';
+                    }
+                }
+                catch { }
+            }
+            setBookingPersonName(name);
+        }
+        else {
+            setBookingPersonName('');
+        }
         setShowBookingForm(true);
     };
     // Hantera bokningsformulär
@@ -69,29 +101,37 @@ const BookingPage = () => {
             }
         }
         else if (bookingMode === 'cancel') {
-            // Avbokningslogik
+            // Avbokningslogik utan krav på namn/email
             try {
-                if (!selectedResource)
+                if (!selectedResource || !selectedSlot)
                     return;
-                // 1. Hitta resource-id för bokningen
-                const bookingId = await findBookingResourceId({
-                    slotId: Number(selectedSlot.slotId),
-                    name: customerName,
-                    email: customerEmail,
-                });
-                if (!bookingId) {
-                    alert('Fel: Namn eller e-post matchar inte bokningen.');
-                    return;
-                }
-                // 2. Ta bort bokningen
-                await deleteBookingResource(bookingId);
-                // 3. Sätt slot till true i resource-content och PUT
+                // Hämta info om bokningen (namn etc) från resource-content
                 const contentObj = JSON.parse(selectedResource.content);
-                // slotId format: 'day-slot' (e.g. '1-2')
                 const [dayNum, slotNum] = selectedSlot.slotId.split('-').map(Number);
                 const dayObj = contentObj.availabilities.find((a) => a.day === dayNum);
+                const slotKey = `slot${slotNum}`;
+                // Hämta bokningsnamn för slotten
+                const bookingName = getBookingName(contentObj, dayNum, slotKey);
+                // Kontrollera att admin skrivit 'delete'
+                if (deleteConfirm !== 'delete') {
+                    alert('Skriv "delete" i rutan för att bekräfta avbokning.');
+                    return;
+                }
+                // Hitta boknings-resource-id och ta bort bokningen
+                const bookingId = await findBookingResourceId({
+                    resourceId: String(selectedResource.id),
+                    day: dayNum,
+                    slot: slotKey,
+                    name: bookingName || '',
+                });
+                if (!bookingId) {
+                    alert('Kunde inte hitta bokningen att ta bort!');
+                    return;
+                }
+                await deleteBookingResource(bookingId);
+                // Sätt slot till true i resource-content och PUT
                 if (dayObj) {
-                    dayObj[`slot${slotNum}`] = true;
+                    dayObj[slotKey] = true;
                 }
                 const newContent = JSON.stringify(contentObj);
                 setSelectedResource({ ...selectedResource, content: newContent });
@@ -103,8 +143,7 @@ const BookingPage = () => {
                 }
                 alert('Bokning avbokad!');
                 setShowBookingForm(false);
-                setCustomerName('');
-                setCustomerEmail('');
+                setDeleteConfirm('');
                 setSelectedSlot(null);
             }
             catch (err) {
@@ -122,6 +161,8 @@ const BookingPage = () => {
                                         if (dayObj && dayObj[`slot${slotNum}`] === false)
                                             mode = 'cancel';
                                         handleSlotClick(slotTime, slotId, slotIndex, mode);
-                                    } }), showBookingForm && selectedSlot && (_jsx("div", { className: "fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50", children: _jsxs("form", { onSubmit: handleBookingSubmit, className: "bg-white p-8 rounded shadow-md w-full max-w-md", children: [_jsx("h3", { className: "text-xl font-bold mb-4 text-black", children: bookingMode === 'book' ? `Boka tid: ${selectedSlot.time}` : `Avboka tid: ${selectedSlot.time}` }), _jsxs("div", { className: "mb-4", children: [_jsx("label", { className: "block mb-1 font-semibold text-black", children: "Namn" }), _jsx("input", { type: "text", className: "w-full border px-3 py-2 rounded", value: customerName, onChange: e => setCustomerName(e.target.value), required: true })] }), _jsxs("div", { className: "mb-4", children: [_jsx("label", { className: "block mb-1 font-semibold text-black", children: "E-post" }), _jsx("input", { type: "email", className: "w-full border px-3 py-2 rounded", value: customerEmail, onChange: e => setCustomerEmail(e.target.value), required: true })] }), _jsxs("div", { className: "flex justify-end gap-2", children: [_jsx("button", { type: "button", className: "px-4 py-2 rounded bg-gray-300 hover:bg-gray-400", onClick: () => setShowBookingForm(false), children: "Avbryt" }), _jsx("button", { type: "submit", className: `px-4 py-2 rounded font-bold ${bookingMode === 'book' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-red-600 text-white hover:bg-red-700'}`, children: bookingMode === 'book' ? 'Boka' : 'Avboka' })] })] }) }))] })) : (_jsx("div", { className: "text-gray-500 text-lg flex items-center justify-center h-full", children: "V\u00E4lj en resurs f\u00F6r att se lediga tider" })) })] })] }));
+                                    } }), showBookingForm && selectedSlot && (_jsx("div", { className: "fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50", children: _jsxs("form", { onSubmit: handleBookingSubmit, className: "bg-white p-8 rounded shadow-md w-full max-w-md", children: [_jsx("h3", { className: "text-xl font-bold mb-4 text-black", children: bookingMode === 'book'
+                                                    ? `Boka tid: ${selectedSlot.time}`
+                                                    : `Avboka - tid ${selectedSlot.time} för ${bookingPersonName}` }), bookingMode === 'book' ? (_jsxs(_Fragment, { children: [_jsxs("div", { className: "mb-4", children: [_jsx("label", { className: "block mb-1 font-semibold text-black", children: "Namn" }), _jsx("input", { type: "text", className: "w-full border px-3 py-2 rounded", value: customerName, onChange: e => setCustomerName(e.target.value), required: true })] }), _jsxs("div", { className: "mb-4", children: [_jsx("label", { className: "block mb-1 font-semibold text-black", children: "E-post" }), _jsx("input", { type: "email", className: "w-full border px-3 py-2 rounded", value: customerEmail, onChange: e => setCustomerEmail(e.target.value), required: true })] })] })) : (_jsx(_Fragment, { children: _jsxs("div", { className: "mb-4", children: [_jsx("label", { className: "block mb-1 font-semibold text-black", children: "Bekr\u00E4fta avbokning" }), _jsx("input", { type: "text", className: "w-full border px-3 py-2 rounded", value: deleteConfirm, onChange: e => setDeleteConfirm(e.target.value), placeholder: "Skriv 'delete' f\u00F6r att avboka" })] }) })), _jsxs("div", { className: "flex justify-end gap-2", children: [_jsx("button", { type: "button", className: "px-4 py-2 rounded bg-gray-300 hover:bg-gray-400", onClick: () => setShowBookingForm(false), children: "Avbryt" }), _jsx("button", { type: "submit", className: `px-4 py-2 rounded font-bold ${bookingMode === 'book' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-red-600 text-white hover:bg-red-700'}`, disabled: bookingMode === 'cancel' && deleteConfirm !== 'delete', children: bookingMode === 'book' ? 'Boka' : 'Avboka' })] })] }) }))] })) : (_jsx("div", { className: "text-gray-500 text-lg flex items-center justify-center h-full", children: "V\u00E4lj en resurs f\u00F6r att se lediga tider" })) })] })] }));
 };
 export default BookingPage;

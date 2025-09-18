@@ -3,7 +3,7 @@ import { useState } from 'react';
 import ResourceList from '../components/ResourceList';
 import AvailabilityList from '../components/AvailabilityList';
 import { createResourceBooking, updateResourceSlot, findBookingResourceId, deleteBookingResource } from '../api/resourceApi';
-import { getResourceContent } from '../utils/helpers';
+import { getResourceContent, getBookingName } from '../utils/helpers';
 
 interface Resource {
   id: number;
@@ -14,15 +14,45 @@ const BookingPage = () => {
   const [selectedResource,  setSelectedResource] = useState<Resource | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<{ time: string; slotId: string; slotIndex: number } | null>(null);
   const [customerName, setCustomerName] = useState('');
+  const [bookingPersonName, setBookingPersonName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState('');
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [bookingMode, setBookingMode] = useState<'book' | 'cancel'>('book');
 
   // Callback när en slot klickas i AvailabilityList
   // mode = 'book' eller 'cancel'
-  const handleSlotClick = (slotTime: string, slotId: string, slotIndex: number, mode: 'book' | 'cancel' = 'book') => {
+  const handleSlotClick = async (slotTime: string, slotId: string, slotIndex: number, mode: 'book' | 'cancel' = 'book') => {
     setSelectedSlot({ time: slotTime, slotId, slotIndex });
     setBookingMode(mode);
+    if (mode === 'cancel' && selectedResource) {
+      // Hämta namn från boknings-resource
+      const [dayNumStr, slotNumStr] = slotId.split('-');
+      const dayNum = Number(dayNumStr);
+      const slotKey = `slot${slotNumStr}`;
+      // Hitta boknings-resource
+      const bookingId = await findBookingResourceId({
+        resourceId: String(selectedResource.id),
+        day: dayNum,
+        slot: slotKey,
+        name: '' // tomt, vi vill hitta oavsett namn
+      });
+      let name = '';
+      if (bookingId) {
+        // Hämta boknings-resource och plocka ut namn
+        try {
+          const res = await fetch(`https://localhost:5083/api/resources/${bookingId}`);
+          if (res.ok) {
+            const data = await res.json();
+            const content = JSON.parse(data.content);
+            name = content.name || '';
+          }
+        } catch {}
+      }
+      setBookingPersonName(name);
+    } else {
+      setBookingPersonName('');
+    }
     setShowBookingForm(true);
   };
 
@@ -72,28 +102,36 @@ const BookingPage = () => {
         alert(`Fel vid bokning\nId: ${selectedSlot.slotId}\nNamn: ${customerName}\nEmail: ${customerEmail}`);
       }
     } else if (bookingMode === 'cancel') {
-      // Avbokningslogik
+      // Avbokningslogik utan krav på namn/email
       try {
-        if (!selectedResource) return;
-        // 1. Hitta resource-id för bokningen
-        const bookingId = await findBookingResourceId({
-          slotId: Number(selectedSlot.slotId),
-          name: customerName,
-          email: customerEmail,
-        });
-        if (!bookingId) {
-          alert('Fel: Namn eller e-post matchar inte bokningen.');
-          return;
-        }
-        // 2. Ta bort bokningen
-        await deleteBookingResource(bookingId);
-        // 3. Sätt slot till true i resource-content och PUT
+        if (!selectedResource || !selectedSlot) return;
+        // Hämta info om bokningen (namn etc) från resource-content
         const contentObj = JSON.parse(selectedResource.content);
-        // slotId format: 'day-slot' (e.g. '1-2')
         const [dayNum, slotNum] = selectedSlot.slotId.split('-').map(Number);
         const dayObj = contentObj.availabilities.find((a: any) => a.day === dayNum);
+        const slotKey = `slot${slotNum}`;
+  // Hämta bokningsnamn för slotten
+  const bookingName = getBookingName(contentObj, dayNum, slotKey);
+        // Kontrollera att admin skrivit 'delete'
+        if (deleteConfirm !== 'delete') {
+          alert('Skriv "delete" i rutan för att bekräfta avbokning.');
+          return;
+        }
+        // Hitta boknings-resource-id och ta bort bokningen
+        const bookingId = await findBookingResourceId({
+          resourceId: String(selectedResource.id),
+          day: dayNum,
+          slot: slotKey,
+          name: bookingName || '',
+        });
+        if (!bookingId) {
+          alert('Kunde inte hitta bokningen att ta bort!');
+          return;
+        }
+        await deleteBookingResource(bookingId);
+        // Sätt slot till true i resource-content och PUT
         if (dayObj) {
-          dayObj[`slot${slotNum}`] = true;
+          dayObj[slotKey] = true;
         }
         const newContent = JSON.stringify(contentObj);
         setSelectedResource({ ...selectedResource, content: newContent });
@@ -104,8 +142,7 @@ const BookingPage = () => {
         }
         alert('Bokning avbokad!');
         setShowBookingForm(false);
-        setCustomerName('');
-        setCustomerEmail('');
+        setDeleteConfirm('');
         setSelectedSlot(null);
       } catch (err) {
         console.error('Fel vid avbokning:', err);
@@ -147,28 +184,47 @@ const BookingPage = () => {
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
                   <form onSubmit={handleBookingSubmit} className="bg-white p-8 rounded shadow-md w-full max-w-md">
                     <h3 className="text-xl font-bold mb-4 text-black">
-                      {bookingMode === 'book' ? `Boka tid: ${selectedSlot.time}` : `Avboka tid: ${selectedSlot.time}`}
+                      {bookingMode === 'book'
+                        ? `Boka tid: ${selectedSlot.time}`
+                        : `Avboka - tid ${selectedSlot.time} för ${bookingPersonName}`}
                     </h3>
-                    <div className="mb-4">
-                      <label className="block mb-1 font-semibold text-black">Namn</label>
-                      <input
-                        type="text"
-                        className="w-full border px-3 py-2 rounded"
-                        value={customerName}
-                        onChange={e => setCustomerName(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label className="block mb-1 font-semibold text-black">E-post</label>
-                      <input
-                        type="email"
-                        className="w-full border px-3 py-2 rounded"
-                        value={customerEmail}
-                        onChange={e => setCustomerEmail(e.target.value)}
-                        required
-                      />
-                    </div>
+                    {bookingMode === 'book' ? (
+                      <>
+                        <div className="mb-4">
+                          <label className="block mb-1 font-semibold text-black">Namn</label>
+                          <input
+                            type="text"
+                            className="w-full border px-3 py-2 rounded"
+                            value={customerName}
+                            onChange={e => setCustomerName(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div className="mb-4">
+                          <label className="block mb-1 font-semibold text-black">E-post</label>
+                          <input
+                            type="email"
+                            className="w-full border px-3 py-2 rounded"
+                            value={customerEmail}
+                            onChange={e => setCustomerEmail(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="mb-4">
+                          <label className="block mb-1 font-semibold text-black">Bekräfta avbokning</label>
+                          <input
+                            type="text"
+                            className="w-full border px-3 py-2 rounded"
+                            value={deleteConfirm}
+                            onChange={e => setDeleteConfirm(e.target.value)}
+                            placeholder="Skriv 'delete' för att avboka"
+                          />
+                        </div>
+                      </>
+                    )}
                     <div className="flex justify-end gap-2">
                       <button
                         type="button"
@@ -178,6 +234,7 @@ const BookingPage = () => {
                       <button
                         type="submit"
                         className={`px-4 py-2 rounded font-bold ${bookingMode === 'book' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-red-600 text-white hover:bg-red-700'}`}
+                        disabled={bookingMode === 'cancel' && deleteConfirm !== 'delete'}
                       >{bookingMode === 'book' ? 'Boka' : 'Avboka'}</button>
                     </div>
                   </form>

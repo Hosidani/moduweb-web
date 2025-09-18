@@ -1,3 +1,15 @@
+/**
+ * Hitta bokningsnamn för en slot i ett resource-content-objekt
+ */
+export function getBookingName(contentObj, dayNum, slotKey) {
+    if (contentObj.bookings && Array.isArray(contentObj.bookings)) {
+        const found = contentObj.bookings.find((b) => b.day === dayNum && b.slot === slotKey);
+        if (found)
+            return found.name;
+    }
+    // Fallback: försök hitta namn direkt på slotten (om du sparar så)
+    return '';
+}
 // src/utils/helpers.ts
 /**
  * Safely parses a JSON string. Returns the parsed object, or fallback if parsing fails.
