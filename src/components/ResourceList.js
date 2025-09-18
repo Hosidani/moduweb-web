@@ -11,7 +11,17 @@ function ResourceList({ onSelectResource, selectedResource }) {
     return (_jsxs("div", { className: "bg-gray-50 border border-gray-300 rounded-lg p-4 shadow-sm", children: [_jsx("h2", { className: "text-xl font-bold mb-4 text-gray-700", children: "Resurser" }), _jsx("ul", { className: "space-y-2", children: resources
                     .filter(r => {
                     const content = getResourceContent(r);
-                    return content && Array.isArray(content.availabilities) && content.availabilities.length > 0;
+                    let availabilities = content?.availabilities;
+                    if (typeof availabilities === 'string') {
+                        try {
+                            availabilities = JSON.parse(availabilities);
+                        }
+                        catch (e) {
+                            availabilities = [];
+                        }
+                    }
+                    // Visa bara resurser med availabilities-array med minst 1 element
+                    return Array.isArray(availabilities) && availabilities.length > 0;
                 })
                     .map(r => {
                     const content = getResourceContent(r);

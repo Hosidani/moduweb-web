@@ -3,6 +3,7 @@ import { useState } from 'react';
 import ResourceList from '../components/ResourceList';
 import AvailabilityList from '../components/AvailabilityList';
 import { createResourceBooking, updateResourceSlot, findBookingResourceId, deleteBookingResource } from '../api/resourceApi';
+import { getResourceContent } from '../utils/helpers';
 
 interface Resource {
   id: number;
@@ -31,25 +32,27 @@ const BookingPage = () => {
     if (!selectedSlot) return;
     if (bookingMode === 'book') {
       try {
+        // slotId format: 'day-slotNum' (e.g. '2-1')
+        const [day, slotNum] = selectedSlot.slotId.split('-');
+        const slot = `slot${slotNum}`;
+        if (!selectedResource) throw new Error('Ingen resurs vald');
         const bookingData = {
-          id: Number(selectedSlot.slotId),
+          resourceId: String(selectedResource.id),
+          day: Number(day),
+          slot,
           name: customerName,
           email: customerEmail,
         };
         console.log('Skickar till backend:', bookingData);
-        await createResourceBooking({
-          id: bookingData.id,
-          name: bookingData.name,
-          email: bookingData.email,
-        });
+        await createResourceBooking(bookingData);
         // Optimistisk uppdatering av slotten i frontend och PUT till backend:
         if (selectedResource) {
           const contentObj = JSON.parse(selectedResource.content);
-          for (const avail of contentObj.availabilities) {
-            if (String(avail.id) === String(selectedSlot.slotId).slice(0, 1)) {
-              const slotIdx = Number(String(selectedSlot.slotId).slice(1)) - 1;
-              avail.slots[slotIdx] = false;
-            }
+          // slotId format: 'day-slot' (e.g. '1-2')
+          const [dayNum, slotNum] = selectedSlot.slotId.split('-').map(Number);
+          const dayObj = contentObj.availabilities.find((a: any) => a.day === dayNum);
+          if (dayObj) {
+            dayObj[`slot${slotNum}`] = false;
           }
           const newContent = JSON.stringify(contentObj);
           setSelectedResource({ ...selectedResource, content: newContent });
@@ -86,11 +89,11 @@ const BookingPage = () => {
         await deleteBookingResource(bookingId);
         // 3. Sätt slot till true i resource-content och PUT
         const contentObj = JSON.parse(selectedResource.content);
-        for (const avail of contentObj.availabilities) {
-          if (String(avail.id) === String(selectedSlot.slotId).slice(0, 1)) {
-            const slotIdx = Number(String(selectedSlot.slotId).slice(1)) - 1;
-            avail.slots[slotIdx] = true;
-          }
+        // slotId format: 'day-slot' (e.g. '1-2')
+        const [dayNum, slotNum] = selectedSlot.slotId.split('-').map(Number);
+        const dayObj = contentObj.availabilities.find((a: any) => a.day === dayNum);
+        if (dayObj) {
+          dayObj[`slot${slotNum}`] = true;
         }
         const newContent = JSON.stringify(contentObj);
         setSelectedResource({ ...selectedResource, content: newContent });
@@ -126,20 +129,17 @@ const BookingPage = () => {
           />
         </div>
         <div className="md:w-2/3 w-full">
-          {selectedResource ? (
+          {selectedResource && getResourceContent(selectedResource).availabilities.length > 0 ? (
             <>
               <AvailabilityList
                 resourceContent={selectedResource.content}
                 onSlotClick={(slotTime, slotId, slotIndex) => {
-                  // Kolla om slotten är ledig eller upptagen
+                  // slotId format: 'day-slot' (e.g. '1-2')
                   const contentObj = JSON.parse(selectedResource.content);
                   let mode: 'book' | 'cancel' = 'book';
-                  for (const avail of contentObj.availabilities) {
-                    if (String(avail.id) === String(slotId).slice(0, 1)) {
-                      const slotIdx = Number(String(slotId).slice(1)) - 1;
-                      if (avail.slots[slotIdx] === false) mode = 'cancel';
-                    }
-                  }
+                  const [dayNum, slotNum] = slotId.split('-').map(Number);
+                  const dayObj = contentObj.availabilities.find((a: any) => a.day === dayNum);
+                  if (dayObj && dayObj[`slot${slotNum}`] === false) mode = 'cancel';
                   handleSlotClick(slotTime, slotId, slotIndex, mode);
                 }}
               />

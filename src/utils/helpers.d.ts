@@ -10,5 +10,5 @@ export declare function safeParseJSON<T = any>(input: string, fallback?: T | nul
  * @returns The parsed content of the resource, or an empty object if parsing fails
  */
 export declare function getResourceContent(resource: {
-    content: string;
+    content: any;
 }): any;

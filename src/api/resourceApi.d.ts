@@ -8,8 +8,10 @@ export declare function updateResourceSlot({ id, content }: {
     id: string;
     content: string;
 }): Promise<any>;
-export declare function createResourceBooking({ id, name, email }: {
-    id: number;
+export declare function createResourceBooking({ resourceId, day, slot, name, email }: {
+    resourceId: string;
+    day: number;
+    slot: string;
     name: string;
     email: string;
 }): Promise<any>;

@@ -18,6 +18,32 @@ export function safeParseJSON(input, fallback = null) {
  * @returns The parsed content of the resource, or an empty object if parsing fails
  */
 export function getResourceContent(resource) {
-    return safeParseJSON(resource.content) || {};
+    let parsed = resource.content;
+    // Parsea om och om tills vi får ett objekt
+    while (typeof parsed === 'string') {
+        try {
+            parsed = JSON.parse(parsed);
+        }
+        catch {
+            parsed = {};
+            break;
+        }
+    }
+    // Hantera availabilities som sträng eller array
+    if (parsed.availabilities && typeof parsed.availabilities === 'string') {
+        try {
+            parsed.availabilities = JSON.parse(parsed.availabilities);
+        }
+        catch {
+            parsed.availabilities = [];
+        }
+    }
+    if (!Array.isArray(parsed.availabilities)) {
+        parsed.availabilities = [];
+    }
+    if (typeof window !== 'undefined') {
+        console.log('getResourceContent:', parsed);
+    }
+    return parsed;
 }
 // Add more helper functions here as needed in the future.

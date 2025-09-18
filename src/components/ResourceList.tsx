@@ -27,7 +27,16 @@ function ResourceList({ onSelectResource, selectedResource }: ResourceListProps)
         {resources
           .filter(r => {
             const content = getResourceContent(r);
-            return content && Array.isArray(content.availabilities) && content.availabilities.length > 0;
+            let availabilities = content?.availabilities;
+            if (typeof availabilities === 'string') {
+              try {
+                availabilities = JSON.parse(availabilities);
+              } catch (e) {
+                availabilities = [];
+              }
+            }
+            // Visa bara resurser med availabilities-array med minst 1 element
+            return Array.isArray(availabilities) && availabilities.length > 0;
           })
           .map(r => {
             const content = getResourceContent(r);
