@@ -1,0 +1,29 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+// ...existing code...
+import { getResourceContent } from '../utils/helpers';
+function ResourceList({ resources, onSelectResource, selectedResource }) {
+    return (_jsxs("div", { className: "bg-gray-50 border border-gray-300 rounded-lg p-4 shadow-sm", children: [_jsx("h2", { className: "text-xl font-bold mb-4 text-gray-700", children: "Resurser" }), _jsx("ul", { className: "space-y-2", children: resources
+                    .filter(r => {
+                    const content = getResourceContent(r);
+                    let availabilities = content?.availabilities;
+                    if (typeof availabilities === 'string') {
+                        try {
+                            availabilities = JSON.parse(availabilities);
+                        }
+                        catch (e) {
+                            availabilities = [];
+                        }
+                    }
+                    // Visa bara resurser med availabilities-array med minst 1 element
+                    return Array.isArray(availabilities) && availabilities.length > 0;
+                })
+                    .map(r => {
+                    const content = getResourceContent(r);
+                    const name = content.name || '';
+                    const type = content.type || '';
+                    const description = content.description || '';
+                    const isSelected = selectedResource?.id === r.id;
+                    return (_jsxs("li", { onClick: () => onSelectResource(r), className: `px-4 py-2 rounded cursor-pointer border transition-colors duration-150 ${isSelected ? 'bg-blue-600 text-white font-bold border-blue-700' : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-100'}`, style: { userSelect: 'none' }, children: [name, " ", type && `(${type})`, " ", description && `- ${description}`] }, r.id));
+                }) })] }));
+}
+export default ResourceList;

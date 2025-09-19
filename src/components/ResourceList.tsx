@@ -1,0 +1,60 @@
+// ...existing code...
+import { getResourceContent } from '../utils/helpers';
+
+interface Resource {
+  id: number;
+  content: string;
+}
+
+
+interface ResourceListProps {
+  resources: Resource[];
+  onSelectResource: (resource: Resource) => void;
+  selectedResource: Resource | null;
+}
+
+
+function ResourceList({ resources, onSelectResource, selectedResource }: ResourceListProps) {
+
+  return (
+    <div className="bg-gray-50 border border-gray-300 rounded-lg p-4 shadow-sm">
+      <h2 className="text-xl font-bold mb-4 text-gray-700">Resurser</h2>
+      <ul className="space-y-2">
+        {resources
+          .filter(r => {
+            const content = getResourceContent(r);
+            let availabilities = content?.availabilities;
+            if (typeof availabilities === 'string') {
+              try {
+                availabilities = JSON.parse(availabilities);
+              } catch (e) {
+                availabilities = [];
+              }
+            }
+            // Visa bara resurser med availabilities-array med minst 1 element
+            return Array.isArray(availabilities) && availabilities.length > 0;
+          })
+          .map(r => {
+            const content = getResourceContent(r);
+            const name = content.name || '';
+            const type = content.type || '';
+            const description = content.description || '';
+
+            const isSelected = selectedResource?.id === r.id;
+            return (
+              <li
+                key={r.id}
+                onClick={() => onSelectResource(r)}
+                className={`px-4 py-2 rounded cursor-pointer border transition-colors duration-150 ${isSelected ? 'bg-blue-600 text-white font-bold border-blue-700' : 'bg-white text-gray-800 border-gray-300 hover:bg-blue-100'}`}
+                style={{ userSelect: 'none' }}
+              >
+                {name} {type && `(${type})`} {description && `- ${description}`}
+              </li>
+            );
+          })}
+      </ul>
+    </div>
+  );
+}
+
+export default ResourceList;
