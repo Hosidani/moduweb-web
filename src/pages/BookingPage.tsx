@@ -1,97 +1,83 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import ResourceList from '../components/ResourceList';
 import AvailabilityList from '../components/AvailabilityList';
-import { createResourceBooking, updateResourceSlot, findBookingResourceId, deleteBookingResource } from '../api/resourceApi';
-import { getResourceContent, getBookingName } from '../utils/helpers';
+import { createResourceBooking, updateResourceSlot, findBookingResourceId, deleteBookingResource, fetchAllResources } from '../api/resourceApi';
+import { getResourceContent } from '../utils/helpers';
 
 interface Resource {
   id: number;
   content: string;
 }
 
+
+// --- Helper to parse slotId ---
+function parseSlotId(slotId: string) {
+  const [day, slotNum] = slotId.split('-').map(Number);
+  return { day, slotNum };
+}
+
+// --- Helper to update slot in resource content ---
+function updateSlotInResource(resource: Resource, day: number, slotNum: number, value: boolean) {
+  const contentObj = JSON.parse(resource.content);
+  const dayObj = contentObj.availabilities.find((a: any) => a.day === day);
+  if (dayObj) dayObj[`slot${slotNum}`] = value;
+  return JSON.stringify(contentObj);
+}
+
+
 const BookingPage = () => {
-  const [selectedResource,  setSelectedResource] = useState<Resource | null>(null);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<{ time: string; slotId: string; slotIndex: number } | null>(null);
   const [customerName, setCustomerName] = useState('');
-  const [bookingPersonName, setBookingPersonName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
-  const [deleteConfirm, setDeleteConfirm] = useState('');
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [bookingMode, setBookingMode] = useState<'book' | 'cancel'>('book');
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+
+  // Fetch all resources once
+  useEffect(() => {
+    fetchAllResources().then(setResources);
+  }, []);
 
   // Callback när en slot klickas i AvailabilityList
   // mode = 'book' eller 'cancel'
-  const handleSlotClick = async (slotTime: string, slotId: string, slotIndex: number, mode: 'book' | 'cancel' = 'book') => {
+  const handleSlotClick = (slotTime: string, slotId: string, slotIndex: number, mode: 'book' | 'cancel' = 'book') => {
     setSelectedSlot({ time: slotTime, slotId, slotIndex });
     setBookingMode(mode);
-    if (mode === 'cancel' && selectedResource) {
-      // Hämta namn från boknings-resource
-      const [dayNumStr, slotNumStr] = slotId.split('-');
-      const dayNum = Number(dayNumStr);
-      const slotKey = `slot${slotNumStr}`;
-      // Hitta boknings-resource
-      const bookingId = await findBookingResourceId({
-        resourceId: String(selectedResource.id),
-        day: dayNum,
-        slot: slotKey,
-        name: '' // tomt, vi vill hitta oavsett namn
-      });
-      let name = '';
-      if (bookingId) {
-        // Hämta boknings-resource och plocka ut namn
-        try {
-          const res = await fetch(`https://localhost:5083/api/resources/${bookingId}`);
-          if (res.ok) {
-            const data = await res.json();
-            const content = JSON.parse(data.content);
-            name = content.name || '';
-          }
-        } catch {}
-      }
-      setBookingPersonName(name);
-    } else {
-      setBookingPersonName('');
-    }
     setShowBookingForm(true);
   };
 
   // Hantera bokningsformulär
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSlot) return;
+    if (!selectedSlot || !selectedResource) return;
+    const { day, slotNum } = parseSlotId(selectedSlot.slotId);
+    const slot = `slot${slotNum}`;
     if (bookingMode === 'book') {
       try {
-        // slotId format: 'day-slotNum' (e.g. '2-1')
-        const [day, slotNum] = selectedSlot.slotId.split('-');
-        const slot = `slot${slotNum}`;
-        if (!selectedResource) throw new Error('Ingen resurs vald');
         const bookingData = {
           resourceId: String(selectedResource.id),
-          day: Number(day),
+          day,
           slot,
           name: customerName,
           email: customerEmail,
         };
         console.log('Skickar till backend:', bookingData);
         await createResourceBooking(bookingData);
-        // Optimistisk uppdatering av slotten i frontend och PUT till backend:
-        if (selectedResource) {
-          const contentObj = JSON.parse(selectedResource.content);
-          // slotId format: 'day-slot' (e.g. '1-2')
-          const [dayNum, slotNum] = selectedSlot.slotId.split('-').map(Number);
-          const dayObj = contentObj.availabilities.find((a: any) => a.day === dayNum);
-          if (dayObj) {
-            dayObj[`slot${slotNum}`] = false;
-          }
-          const newContent = JSON.stringify(contentObj);
-          setSelectedResource({ ...selectedResource, content: newContent });
-          try {
-            await updateResourceSlot({ id: String(selectedResource.id), content: newContent });
-          } catch (err) {
-            console.error('Kunde inte uppdatera slot i databasen:', err);
-          }
+        // Update slot to false (booked) in backend
+        const newContent = updateSlotInResource(selectedResource, day, slotNum, false);
+        try {
+          await updateResourceSlot({ id: String(selectedResource.id), content: newContent });
+        } catch (err) {
+          console.error('Kunde inte uppdatera slot i databasen:', err);
         }
+        // Always fetch latest resources and update selectedResource from new array
+        const newResources = await fetchAllResources();
+        setResources(newResources);
+        const updated = newResources.find((r: Resource) => r.id === selectedResource.id);
+        if (updated) setSelectedResource(updated);
         alert('Bokning skapad!');
         setShowBookingForm(false);
         setCustomerName('');
@@ -102,47 +88,36 @@ const BookingPage = () => {
         alert(`Fel vid bokning\nId: ${selectedSlot.slotId}\nNamn: ${customerName}\nEmail: ${customerEmail}`);
       }
     } else if (bookingMode === 'cancel') {
-      // Avbokningslogik utan krav på namn/email
       try {
-        if (!selectedResource || !selectedSlot) return;
-        // Hämta info om bokningen (namn etc) från resource-content
-        const contentObj = JSON.parse(selectedResource.content);
-        const [dayNum, slotNum] = selectedSlot.slotId.split('-').map(Number);
-        const dayObj = contentObj.availabilities.find((a: any) => a.day === dayNum);
-        const slotKey = `slot${slotNum}`;
-  // Hämta bokningsnamn för slotten
-  const bookingName = getBookingName(contentObj, dayNum, slotKey);
-        // Kontrollera att admin skrivit 'delete'
-        if (deleteConfirm !== 'delete') {
-          alert('Skriv "delete" i rutan för att bekräfta avbokning.');
-          return;
-        }
-        // Hitta boknings-resource-id och ta bort bokningen
+        // Hitta resource-id för bokningen
         const bookingId = await findBookingResourceId({
           resourceId: String(selectedResource.id),
-          day: dayNum,
-          slot: slotKey,
-          name: bookingName || '',
+          day,
+          slot,
+          name: customerName,
         });
         if (!bookingId) {
-          alert('Kunde inte hitta bokningen att ta bort!');
+          alert('Fel: bokning hittades inte.');
           return;
         }
+        // Ta bort bokningen från Lediga tider & uppdatera Bokningar
         await deleteBookingResource(bookingId);
-        // Sätt slot till true i resource-content och PUT
-        if (dayObj) {
-          dayObj[slotKey] = true;
-        }
-        const newContent = JSON.stringify(contentObj);
-        setSelectedResource({ ...selectedResource, content: newContent });
+        // Sätt slot till true (ledig) in backend
+        const newContent = updateSlotInResource(selectedResource, day, slotNum, true);
         try {
           await updateResourceSlot({ id: String(selectedResource.id), content: newContent });
         } catch (err) {
           console.error('Kunde inte uppdatera slot i databasen:', err);
         }
+        // Always fetch latest resources and update selectedResource from new array
+        const newResources = await fetchAllResources();
+        setResources(newResources);
+        const updated = newResources.find((r: Resource) => r.id === selectedResource.id);
+        if (updated) setSelectedResource(updated);
         alert('Bokning avbokad!');
         setShowBookingForm(false);
-        setDeleteConfirm('');
+        setCustomerName('');
+        setCustomerEmail('');
         setSelectedSlot(null);
       } catch (err) {
         console.error('Fel vid avbokning:', err);
@@ -150,6 +125,27 @@ const BookingPage = () => {
       }
     }
   };
+
+  // Hämta bokningsnamn för vald slot (endast vid avbokning)
+  let bookedName = '';
+  if (bookingMode === 'cancel' && selectedSlot && selectedResource) {
+    // Hitta bokningen för denna slot
+    const { day, slotNum } = parseSlotId(selectedSlot.slotId);
+    const slot = `slot${slotNum}`;
+    // Sök i alla resources efter en bokning som matchar resourceId, day, slot
+    const booking = resources
+      .map(r => {
+        try { return { ...JSON.parse(r.content), id: r.id }; } catch { return null; }
+      })
+      .find(
+        b =>
+          b &&
+          b.resourceId === String(selectedResource.id) &&
+          b.day === day &&
+          b.slot === slot
+      );
+    if (booking && booking.name) bookedName = booking.name;
+  }
 
   return (
     <div className="p-6 bg-gray-800 min-h-screen">
@@ -161,6 +157,7 @@ const BookingPage = () => {
             Boka nu
           </button>
           <ResourceList
+            resources={resources}
             onSelectResource={setSelectedResource}
             selectedResource={selectedResource}
           />
@@ -170,6 +167,7 @@ const BookingPage = () => {
             <>
               <AvailabilityList
                 resourceContent={selectedResource.content}
+                allResources={resources}
                 onSlotClick={(slotTime, slotId, slotIndex) => {
                   // slotId format: 'day-slot' (e.g. '1-2')
                   const contentObj = JSON.parse(selectedResource.content);
@@ -184,9 +182,7 @@ const BookingPage = () => {
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
                   <form onSubmit={handleBookingSubmit} className="bg-white p-8 rounded shadow-md w-full max-w-md">
                     <h3 className="text-xl font-bold mb-4 text-black">
-                      {bookingMode === 'book'
-                        ? `Boka tid: ${selectedSlot.time}`
-                        : `Avboka - tid ${selectedSlot.time} för ${bookingPersonName}`}
+                      {bookingMode === 'book' ? `Boka tid: ${selectedSlot.time}` : `Avboka tid: ${selectedSlot.time}`}
                     </h3>
                     {bookingMode === 'book' ? (
                       <>
@@ -214,7 +210,9 @@ const BookingPage = () => {
                     ) : (
                       <>
                         <div className="mb-4">
-                          <label className="block mb-1 font-semibold text-black">Bekräfta avbokning</label>
+                          {bookedName && (
+                            <label className="block mb-1 font-semibold text-black">Bekräfta avbokning som bokad av: {bookedName}</label>
+                          )}
                           <input
                             type="text"
                             className="w-full border px-3 py-2 rounded"
@@ -229,7 +227,10 @@ const BookingPage = () => {
                       <button
                         type="button"
                         className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
-                        onClick={() => setShowBookingForm(false)}
+                        onClick={() => {
+                          setShowBookingForm(false);
+                          setDeleteConfirm('');
+                        }}
                       >Avbryt</button>
                       <button
                         type="submit"

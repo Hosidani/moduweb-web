@@ -16,3 +16,4 @@ export declare function createResourceBooking({ resourceId, day, slot, name, ema
     name: string;
     email: string;
 }): Promise<any>;
+export declare function fetchAllResources(): Promise<any>;

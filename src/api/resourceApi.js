@@ -54,3 +54,9 @@ export async function createResourceBooking({ resourceId, day, slot, name, email
         throw new Error('Kunde inte skapa bokning');
     return await response.json();
 }
+export async function fetchAllResources() {
+    const response = await fetch('https://localhost:5083/api/resources');
+    if (!response.ok)
+        throw new Error('Kunde inte hämta resurser');
+    return await response.json();
+}

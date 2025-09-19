@@ -57,6 +57,38 @@ export function getResourceContent(resource: { content: any }) {
   return parsed;
 }
 
-
+/**
+ * Filters and returns all resources that represent bookings for a given parent resource.
+ * A booking resource must have: resourceId, slot, name, and email.
+ * @param resources Array of resource objects (with 'id' and 'content' properties)
+ * @param parentResourceId The id of the parent resource to match
+ * @returns Array of booking resource objects for the given parent
+ */
+export function getBookingsForParentResource(
+  resources: { id: string; content: any }[],
+  parentResourceId: string
+) {
+  return resources
+    .map(resource => {
+      let parsed = resource.content;
+      while (typeof parsed === 'string') {
+        try {
+          parsed = JSON.parse(parsed);
+        } catch {
+          parsed = {};
+          break;
+        }
+      }
+      return { ...parsed, id: resource.id };
+    })
+    .filter(
+      b =>
+        b &&
+        b.resourceId === parentResourceId &&
+        b.slot &&
+        b.name &&
+        b.email
+    );
+}
 
 // Add more helper functions here as needed in the future.

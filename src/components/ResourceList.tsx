@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+// ...existing code...
 import { getResourceContent } from '../utils/helpers';
 
 interface Resource {
@@ -6,19 +6,15 @@ interface Resource {
   content: string;
 }
 
+
 interface ResourceListProps {
+  resources: Resource[];
   onSelectResource: (resource: Resource) => void;
   selectedResource: Resource | null;
 }
 
-function ResourceList({ onSelectResource, selectedResource }: ResourceListProps) {
-  const [resources, setResources] = useState<Resource[]>([]);
 
-  useEffect(() => {
-    fetch('https://localhost:5083/api/resources')
-      .then(res => res.json())
-      .then(data => setResources(data));
-  }, []);
+function ResourceList({ resources, onSelectResource, selectedResource }: ResourceListProps) {
 
   return (
     <div className="bg-gray-50 border border-gray-300 rounded-lg p-4 shadow-sm">

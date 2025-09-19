@@ -1,13 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useEffect, useState } from 'react';
+// ...existing code...
 import { getResourceContent } from '../utils/helpers';
-function ResourceList({ onSelectResource, selectedResource }) {
-    const [resources, setResources] = useState([]);
-    useEffect(() => {
-        fetch('https://localhost:5083/api/resources')
-            .then(res => res.json())
-            .then(data => setResources(data));
-    }, []);
+function ResourceList({ resources, onSelectResource, selectedResource }) {
     return (_jsxs("div", { className: "bg-gray-50 border border-gray-300 rounded-lg p-4 shadow-sm", children: [_jsx("h2", { className: "text-xl font-bold mb-4 text-gray-700", children: "Resurser" }), _jsx("ul", { className: "space-y-2", children: resources
                     .filter(r => {
                     const content = getResourceContent(r);
