@@ -58,3 +58,14 @@ export async function fetchAllResources() {
   if (!response.ok) throw new Error('Kunde inte hämta resurser');
   return await response.json();
 }
+
+// Skicka verifieringsmail efter bokning
+export async function sendBookingEmail({ to, subject, body }: { to: string; subject: string; body: string }) {
+  const response = await fetch('https://localhost:5083/api/email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to, subject, body }),
+  });
+  if (!response.ok) throw new Error('Kunde inte skicka e-post');
+  return await response.json();
+}

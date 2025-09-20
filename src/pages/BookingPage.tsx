@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import ResourceList from '../components/ResourceList';
 import AvailabilityList from '../components/AvailabilityList';
-import { createResourceBooking, updateResourceSlot, findBookingResourceId, deleteBookingResource, fetchAllResources } from '../api/resourceApi';
+import { createResourceBooking, updateResourceSlot, findBookingResourceId, deleteBookingResource, fetchAllResources, sendBookingEmail } from '../api/resourceApi';
 import { getResourceContent } from '../utils/helpers';
 
 interface Resource {
@@ -83,6 +83,21 @@ const BookingPage = () => {
         setCustomerName('');
         setCustomerEmail('');
         setSelectedSlot(null);
+
+        // Send booking confirmation email
+        try {
+          const resourceName = getResourceContent(selectedResource).name || 'Resurs';
+          const subject = `Bokningsbekräftelse för ${resourceName}`;
+          const body = `Hej ${customerName},\n\nDu har bokat ${resourceName} på dag ${parseSlotId(selectedSlot.slotId).day} kl ${selectedSlot.time}.\n\nTack för din bokning!`;
+
+          await sendBookingEmail({
+            to: customerEmail,
+            subject,
+            body,
+          });
+        } catch (err) {
+          console.error('Kunde inte skicka verifieringsmail:', err);
+        }
       } catch (err) {
         console.error('Fel vid bokning:', err);
         alert(`Fel vid bokning\nId: ${selectedSlot.slotId}\nNamn: ${customerName}\nEmail: ${customerEmail}`);
