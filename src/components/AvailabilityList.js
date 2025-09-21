@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import React from 'react';
-import { safeParseJSON, getBookingsForParentResource } from '../utils/helpers';
+import { safeParseJSON } from '../utils/helpers';
 const AvailabilityList = ({ resourceContent, allResources, onSlotClick, showBookingDetails }) => {
     const content = safeParseJSON(resourceContent);
     if (!content || !content.availabilities)
@@ -38,8 +38,23 @@ const AvailabilityList = ({ resourceContent, allResources, onSlotClick, showBook
             parentResourceId = String(found.id);
     }
     // Map allResources to have id as string for the helper
-    const allResourcesStringId = allResources.map(r => ({ ...r, id: String(r.id) }));
-    const bookings = getBookingsForParentResource(allResourcesStringId, parentResourceId);
+    // Fix: parse booking object from resource row, handling double-JSON (reminderTime or not)
+    function parseBooking(resource) {
+        try {
+            let obj = safeParseJSON(resource.content);
+            if (obj && typeof obj.content === 'string') {
+                obj = safeParseJSON(obj.content);
+            }
+            return { ...obj, id: resource.id };
+        }
+        catch {
+            return null;
+        }
+    }
+    // Use only bookings for this parent resource
+    const bookings = allResources
+        .map(parseBooking)
+        .filter(b => b && b.resourceId === parentResourceId);
     function groupBookingsByDay(bookings) {
         const grouped = {};
         bookings.forEach(b => {

@@ -19,6 +19,7 @@ function updateSlotInResource(resource, day, slotNum, value) {
 }
 const BookingPage = () => {
     const [resources, setResources] = useState([]);
+    // Helper: parse booking object from resource row
     const [selectedResource, setSelectedResource] = useState(null);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [customerName, setCustomerName] = useState('');
@@ -46,15 +47,20 @@ const BookingPage = () => {
         const slot = `slot${slotNum}`;
         if (bookingMode === 'book') {
             try {
+                // Calculate reminderTime: 1 minute after now (for demo)
+                const now = new Date();
+                const reminderDate = new Date(now.getTime() + 1 * 60 * 1000); // 1 minutes later
+                const reminderTime = reminderDate.toISOString();
                 const bookingData = {
                     resourceId: String(selectedResource.id),
                     day,
                     slot,
                     name: customerName,
                     email: customerEmail,
+                    reminderTime, // Add reminderTime to booking
                 };
                 console.log('Skickar till backend:', bookingData);
-                await createResourceBooking(bookingData);
+                await createResourceBooking({ content: JSON.stringify(bookingData) });
                 // Update slot to false (booked) in backend
                 const newContent = updateSlotInResource(selectedResource, day, slotNum, false);
                 try {
@@ -145,7 +151,12 @@ const BookingPage = () => {
         const booking = resources
             .map(r => {
             try {
-                return { ...JSON.parse(r.content), id: r.id };
+                // Hantera ev. dubbla JSON-lager
+                let obj = JSON.parse(r.content);
+                if (obj && typeof obj.content === 'string') {
+                    obj = JSON.parse(obj.content);
+                }
+                return { ...obj, id: r.id };
             }
             catch {
                 return null;

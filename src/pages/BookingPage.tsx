@@ -28,6 +28,7 @@ function updateSlotInResource(resource: Resource, day: number, slotNum: number, 
 
 const BookingPage = () => {
   const [resources, setResources] = useState<Resource[]>([]);
+  // Helper: parse booking object from resource row
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<{ time: string; slotId: string; slotIndex: number } | null>(null);
   const [customerName, setCustomerName] = useState('');
@@ -57,15 +58,21 @@ const BookingPage = () => {
     const slot = `slot${slotNum}`;
     if (bookingMode === 'book') {
       try {
+        // Calculate reminderTime: 1 minute after now (for demo)
+        const now = new Date();
+        const reminderDate = new Date(now.getTime() + 1 * 60 * 1000); // 1 minutes later
+        const reminderTime = reminderDate.toISOString();
+
         const bookingData = {
           resourceId: String(selectedResource.id),
           day,
           slot,
           name: customerName,
           email: customerEmail,
+          reminderTime, // Add reminderTime to booking
         };
         console.log('Skickar till backend:', bookingData);
-        await createResourceBooking(bookingData);
+        await createResourceBooking({ content: JSON.stringify(bookingData) });
         // Update slot to false (booked) in backend
         const newContent = updateSlotInResource(selectedResource, day, slotNum, false);
         try {
@@ -150,7 +157,16 @@ const BookingPage = () => {
     // Sök i alla resources efter en bokning som matchar resourceId, day, slot
     const booking = resources
       .map(r => {
-        try { return { ...JSON.parse(r.content), id: r.id }; } catch { return null; }
+        try {
+          // Hantera ev. dubbla JSON-lager
+          let obj = JSON.parse(r.content);
+          if (obj && typeof obj.content === 'string') {
+            obj = JSON.parse(obj.content);
+          }
+          return { ...obj, id: r.id };
+        } catch {
+          return null;
+        }
       })
       .find(
         b =>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { safeParseJSON, getBookingsForParentResource } from '../utils/helpers';
+import { safeParseJSON } from '../utils/helpers';
 
 
 interface Resource {
@@ -57,8 +57,22 @@ const AvailabilityList: React.FC<AvailabilityListProps> = ({ resourceContent, al
     if (found) parentResourceId = String(found.id);
   }
   // Map allResources to have id as string for the helper
-  const allResourcesStringId = allResources.map(r => ({ ...r, id: String(r.id) }));
-  const bookings = getBookingsForParentResource(allResourcesStringId, parentResourceId);
+  // Fix: parse booking object from resource row, handling double-JSON (reminderTime or not)
+  function parseBooking(resource: { id: number | string; content: string }) {
+    try {
+      let obj = safeParseJSON(resource.content);
+      if (obj && typeof obj.content === 'string') {
+        obj = safeParseJSON(obj.content);
+      }
+      return { ...obj, id: resource.id };
+    } catch {
+      return null;
+    }
+  }
+  // Use only bookings for this parent resource
+  const bookings = allResources
+    .map(parseBooking)
+    .filter(b => b && b.resourceId === parentResourceId);
 
   function groupBookingsByDay(bookings: any[]) {
     const grouped: { [day: number]: any[] } = {};
