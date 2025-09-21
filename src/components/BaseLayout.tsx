@@ -11,8 +11,8 @@ const BaseLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header style={{ background: '#eee', padding: '1rem', width: '100vw', boxSizing: 'border-box', textAlign: 'center' }}>
-        <h1>Moduweb</h1>
-        <div style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}>{welcomeText}</div>
+        <h1 style={{ color: '#222' }}>Moduweb</h1>
+        <div style={{ marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>{welcomeText}</div>
         <nav style={{ display: 'flex', justifyContent: 'flex-start', gap: '1rem' }}>
           <Link to="/">Homepage</Link>
           <Link to="/login">Login</Link>
