@@ -1,6 +1,8 @@
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 // Hämta alla bokningar (resources med Content som har id, name, email)
 export async function findBookingResourceId({ resourceId, day, slot, name }: { resourceId: string; day: number; slot: string; name: string }): Promise<string | null> {
-  const response = await fetch('https://localhost:5083/api/resources');
+  const response = await fetch(`${API_BASE_URL}/resources`);
   if (!response.ok) throw new Error('Kunde inte hämta resurser');
   const resources = await response.json();
   for (const r of resources) {
@@ -24,7 +26,7 @@ export async function findBookingResourceId({ resourceId, day, slot, name }: { r
 
 // Ta bort en bokning (DELETE)
 export async function deleteBookingResource(id: string) {
-  const response = await fetch(`https://localhost:5083/api/resources/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/resources/${id}`, {
     method: 'DELETE',
   });
   if (!response.ok) throw new Error('Kunde inte ta bort bokning');
@@ -32,7 +34,7 @@ export async function deleteBookingResource(id: string) {
 // Uppdatera en resurs (PUT)
 export async function updateResourceSlot({ id, content }: { id: string; content: string }) {
   // content ska redan vara en JSON-sträng, så vi gör INTE JSON.stringify(content) igen
-  const response = await fetch(`https://localhost:5083/api/resources/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/resources/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content }),
@@ -45,7 +47,7 @@ export async function createResourceBooking(bookingObj: { [key: string]: any }) 
   // Gör ENDAST EN JSON.stringify!
   const content = JSON.stringify(bookingObj);
   // Skicka till backend
-  const response = await fetch('https://localhost:5083/api/resources', {
+  const response = await fetch(`${API_BASE_URL}/resources`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content }), // content är en JSON-sträng, INTE en strängad sträng!
@@ -55,14 +57,14 @@ export async function createResourceBooking(bookingObj: { [key: string]: any }) 
 }
 
 export async function fetchAllResources() {
-  const response = await fetch('https://localhost:5083/api/resources');
+  const response = await fetch(`${API_BASE_URL}/resources`);
   if (!response.ok) throw new Error('Kunde inte hämta resurser');
   return await response.json();
 }
 
 // Skicka verifieringsmail efter bokning
 export async function sendBookingEmail({ to, subject, body }: { to: string; subject: string; body: string }) {
-  const response = await fetch('https://localhost:5083/api/email', {
+  const response = await fetch(`${API_BASE_URL}/email`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ to, subject, body }),
