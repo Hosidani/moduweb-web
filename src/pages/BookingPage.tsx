@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import ResourceList from '../components/ResourceList';
 import AvailabilityList from '../components/AvailabilityList';
-import { createResourceBooking, updateResourceSlot, findBookingResourceId, deleteBookingResource, fetchAllResources } from '../api/resourceApi';
+import { createResourceBooking, updateResourceSlot, findBookingResourceId, deleteBookingResource, fetchAllResources, sendBookingEmail } from '../api/resourceApi';
 import { getResourceContent } from '../utils/helpers';
 
 interface Resource {
@@ -28,6 +28,7 @@ function updateSlotInResource(resource: Resource, day: number, slotNum: number, 
 
 const BookingPage = () => {
   const [resources, setResources] = useState<Resource[]>([]);
+  // Helper: parse booking object from resource row
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<{ time: string; slotId: string; slotIndex: number } | null>(null);
   const [customerName, setCustomerName] = useState('');
@@ -57,15 +58,21 @@ const BookingPage = () => {
     const slot = `slot${slotNum}`;
     if (bookingMode === 'book') {
       try {
+        // Calculate reminderTime: 1 minute after now (for demo)
+        const now = new Date();
+        const reminderDate = new Date(now.getTime() + 1 * 60 * 1000); // 1 minutes later
+        const reminderTime = reminderDate.toISOString();
+
         const bookingData = {
           resourceId: String(selectedResource.id),
           day,
           slot,
           name: customerName,
           email: customerEmail,
+          reminderTime, // Add reminderTime to booking
         };
         console.log('Skickar till backend:', bookingData);
-        await createResourceBooking(bookingData);
+        await createResourceBooking({ content: JSON.stringify(bookingData) });
         // Update slot to false (booked) in backend
         const newContent = updateSlotInResource(selectedResource, day, slotNum, false);
         try {
@@ -83,6 +90,21 @@ const BookingPage = () => {
         setCustomerName('');
         setCustomerEmail('');
         setSelectedSlot(null);
+
+        // Send booking confirmation email
+        try {
+          const resourceName = getResourceContent(selectedResource).name || 'Resurs';
+          const subject = `Bokningsbekräftelse för ${resourceName}`;
+          const body = `Hej ${customerName},\n\nDu har bokat ${resourceName} på dag ${parseSlotId(selectedSlot.slotId).day} kl ${selectedSlot.time}.\n\nTack för din bokning!`;
+
+          await sendBookingEmail({
+            to: customerEmail,
+            subject,
+            body,
+          });
+        } catch (err) {
+          console.error('Kunde inte skicka verifieringsmail:', err);
+        }
       } catch (err) {
         console.error('Fel vid bokning:', err);
         alert(`Fel vid bokning\nId: ${selectedSlot.slotId}\nNamn: ${customerName}\nEmail: ${customerEmail}`);
@@ -135,7 +157,16 @@ const BookingPage = () => {
     // Sök i alla resources efter en bokning som matchar resourceId, day, slot
     const booking = resources
       .map(r => {
-        try { return { ...JSON.parse(r.content), id: r.id }; } catch { return null; }
+        try {
+          // Hantera ev. dubbla JSON-lager
+          let obj = JSON.parse(r.content);
+          if (obj && typeof obj.content === 'string') {
+            obj = JSON.parse(obj.content);
+          }
+          return { ...obj, id: r.id };
+        } catch {
+          return null;
+        }
       })
       .find(
         b =>

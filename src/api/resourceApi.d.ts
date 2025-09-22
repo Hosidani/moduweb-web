@@ -9,11 +9,12 @@ export declare function updateResourceSlot({ id, content }: {
     id: string;
     content: string;
 }): Promise<any>;
-export declare function createResourceBooking({ resourceId, day, slot, name, email }: {
-    resourceId: string;
-    day: number;
-    slot: string;
-    name: string;
-    email: string;
+export declare function createResourceBooking(bookingObj: {
+    [key: string]: any;
 }): Promise<any>;
 export declare function fetchAllResources(): Promise<any>;
+export declare function sendBookingEmail({ to, subject, body }: {
+    to: string;
+    subject: string;
+    body: string;
+}): Promise<any>;
