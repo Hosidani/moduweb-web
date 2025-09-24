@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useAuth } from '../context/AuthContext';
-import { getUser, updateUser, deleteUser } from '../api/user';
+import { getUser, updateUser, deleteUser } from '../api/user'; // API file is still named user.js, but endpoints inside are now plural
 import { useState, useEffect } from 'react';
 const DashboardPage = () => {
     const { user } = useAuth();

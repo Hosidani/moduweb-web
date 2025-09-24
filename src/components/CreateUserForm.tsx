@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createUser } from '../api/user'; // Adjust path if needed
+import { createUser } from '../api/user'; // API file is still named user.js, but endpoints inside are now plural
 
 function CreateUserForm() {
   const [form, setForm] = useState({ userName: '', email: '', password: '' });
