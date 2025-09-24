@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { ProductDto } from "../types/ProductDto";
 import {
   getProducts,
@@ -14,6 +14,7 @@ const initialForm: ProductDto = {
   price: 0,
   stock: 0,
   sku: 0,
+  images: [],
 };
 
 export default function ProductList() {
@@ -103,16 +104,38 @@ export default function ProductList() {
     }
   };
 
-  // Demo images for now
-  const demoImages = [
-    "https://placehold.co/400x300?text=Image+1",
-    "https://placehold.co/400x300?text=Image+2",
-    "https://placehold.co/400x300?text=Image+3",
-    "https://placehold.co/400x300?text=Image+4",
-    "https://placehold.co/400x300?text=Image+5",
-    "https://placehold.co/400x300?text=Image+6",
-  ];
+  // Images state (uploaded + demo)
   const [selectedImage, setSelectedImage] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Upload image to backend (Azure Blob)
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch(`${API_BASE_URL}/image/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Image upload failed");
+      const data = await res.json();
+      setForm((prev) => ({
+        ...prev,
+        images: [data.url, ...(prev.images || [])],
+      }));
+      setSelectedImage(0);
+    } catch (err: any) {
+      setError(err.message || "Image upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   return (
     <div className="flex flex-col md:flex-row gap-8 max-w-7xl mx-auto p-6 bg-gray-900 rounded-lg shadow-lg">
@@ -241,13 +264,29 @@ export default function ProductList() {
       <div className="md:w-1/3 w-full flex flex-col gap-8">
         <div className="bg-gray-800 p-6 rounded-lg shadow min-h-[200px] mb-8 border-2 border-blue-200">
           <h3 className="text-lg font-bold mb-2 text-blue-200">Images</h3>
+          {/* Upload button */}
+          <div className="mb-4 flex items-center gap-4">
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              className="text-gray-200"
+              disabled={uploading}
+            />
+            {uploading && <span className="text-blue-400">Uploading...</span>}
+          </div>
           {/* Big image */}
           <div className="w-full h-64 bg-gray-900 border-2 border-blue-300 rounded flex items-center justify-center text-gray-500 mb-4 overflow-hidden">
-            <img src={demoImages[selectedImage]} alt="Selected" className="object-contain h-full w-full" />
+            {form.images && form.images.length > 0 ? (
+              <img src={form.images[selectedImage]} alt="Selected" className="object-contain h-full w-full" />
+            ) : (
+              <span>No image selected</span>
+            )}
           </div>
           {/* Thumbnails */}
           <div className="flex gap-2 justify-center">
-            {demoImages.slice(0, 5).map((img, idx) => (
+            {form.images && form.images.slice(0, 5).map((img, idx) => (
               <img
                 key={img}
                 src={img}
