@@ -140,8 +140,39 @@ export default function ProductList() {
     const confirmed = window.confirm(`Are you sure you want to delete the product: "${productToDelete.name}"?`);
     if (!confirmed) return;
     try {
+      // Best-effort: attempt to delete all images associated with the product first.
+      const imgs = productToDelete.images ?? [];
+      if (imgs.length > 0) {
+        await Promise.allSettled(imgs.map(async (imgUrl) => {
+          // robust filename extraction
+          let fileName = "";
+          try {
+            const urlObj = new URL(imgUrl);
+            const path = urlObj.pathname || imgUrl;
+            const last = path.split('/').pop() || '';
+            fileName = decodeURIComponent(last.replace(/\/$/, ''));
+          } catch {
+            // fallback for non-standard URLs
+            fileName = decodeURIComponent((imgUrl.split('/').pop() || '').split('?')[0]);
+          }
+          console.log('Deleting product image (best-effort) fileName=', fileName);
+          try {
+            const res = await fetch(`${API_BASE_URL}/image/delete?fileName=${encodeURIComponent(fileName)}`, { method: 'DELETE' });
+            // treat 404 as idempotent success
+            if (!res.ok && res.status !== 404) {
+              const txt = await res.text();
+              throw new Error(txt || 'Failed to delete image');
+            }
+          } catch (e) {
+            // swallow individual image delete errors - we'll continue with product deletion
+            console.warn('Image delete (best-effort) failed for', imgUrl, e);
+          }
+        }));
+      }
+
       await deleteProduct(productToDelete.id);
-      setProducts((prev) => prev.filter((_, i) => i !== index));
+      // Remove by id (safer than index because filteredProducts may be a subset)
+      setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
     } catch (e: any) {
       setError(e.message);
     }
@@ -178,6 +209,46 @@ export default function ProductList() {
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  // Delete image from blob storage using backend endpoint
+  const handleImageDelete = async (url?: string) => {
+    const targetUrl = url ?? form.images?.[selectedImage];
+    if (!targetUrl) return;
+    try {
+      // Confirm with the user before deleting
+      const ok = window.confirm('Are you sure you want to delete this image?');
+      if (!ok) return;
+      // robust filename extraction: prefer URL parsing, fallback to naive split
+      let fileName = "";
+      try {
+        const urlObj = new URL(targetUrl);
+        const path = urlObj.pathname || targetUrl;
+        const last = path.split('/').pop() || '';
+        fileName = decodeURIComponent(last.replace(/\/$/, ''));
+      } catch {
+        // fallback if targetUrl is not an absolute URL
+        fileName = decodeURIComponent((targetUrl.split('/').pop() || '').split('?')[0]);
+      }
+      console.log('Deleting image fileName=', fileName);
+      const res = await fetch(`${API_BASE_URL}/image/delete?fileName=${encodeURIComponent(fileName)}`, {
+        method: 'DELETE',
+      });
+      // treat 404 (not found) as idempotent success
+      if (!res.ok && res.status !== 404) {
+        const txt = await res.text();
+        throw new Error(txt || 'Failed to delete image');
+      }
+      // Remove the image from form.images
+      setForm(prev => {
+        const imgs = prev.images ? prev.images.filter(i => i !== targetUrl) : [];
+        return { ...prev, images: imgs } as ProductDto;
+      });
+      // adjust selectedImage index
+      setSelectedImage(s => Math.max(0, s - 1));
+    } catch (err: any) {
+      setError(err.message || 'Image delete failed');
     }
   };
 
@@ -410,6 +481,14 @@ export default function ProductList() {
                     className="text-gray-200 file:bg-blue-700 file:text-white file:rounded file:px-3 file:py-1 file:mr-2 file:border-none"
                     disabled={uploading}
                   />
+                  <button
+                    type="button"
+                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded shadow transition-all"
+                    onClick={() => handleImageDelete()}
+                    disabled={uploading || !(form.images && form.images.length > 0)}
+                  >
+                    Delete Image
+                  </button>
                   {uploading && <span className="text-blue-200 animate-pulse">Uploading...</span>}
                 </div>
               )}
