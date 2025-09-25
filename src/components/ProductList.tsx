@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { ProductDto } from "../types/ProductDto";
 import {
   getProducts,
@@ -14,6 +14,7 @@ const initialForm: ProductDto = {
   price: 0,
   stock: 0,
   sku: 0,
+  images: [],
 };
 
 export default function ProductList() {
@@ -85,6 +86,14 @@ export default function ProductList() {
   const handleEdit = (index: number) => {
     setForm({ ...filteredProducts[index] });
     setEditingIndex(index);
+    setSelectedImage(0);
+  };
+
+  // When a row is clicked, show its images in the gallery (but do not enter edit mode)
+  const handleRowClick = (index: number) => {
+    setForm({ ...filteredProducts[index] });
+    setEditingIndex(null);
+    setSelectedImage(0);
   };
 
   const handleDelete = async (index: number) => {
@@ -103,165 +112,224 @@ export default function ProductList() {
     }
   };
 
-  // Demo images for now
-  const demoImages = [
-    "https://placehold.co/400x300?text=Image+1",
-    "https://placehold.co/400x300?text=Image+2",
-    "https://placehold.co/400x300?text=Image+3",
-    "https://placehold.co/400x300?text=Image+4",
-    "https://placehold.co/400x300?text=Image+5",
-    "https://placehold.co/400x300?text=Image+6",
-  ];
+  // Images state (uploaded + demo)
   const [selectedImage, setSelectedImage] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Upload image to backend (Azure Blob)
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch(`${API_BASE_URL}/image/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Image upload failed");
+      const data = await res.json();
+      setForm((prev) => ({
+        ...prev,
+        images: [data.url, ...(prev.images || [])],
+      }));
+      setSelectedImage(0);
+    } catch (err: any) {
+      setError(err.message || "Image upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   return (
-    <div className="flex flex-col md:flex-row gap-8 max-w-7xl mx-auto p-6 bg-gray-900 rounded-lg shadow-lg">
-      {/* Left: Add Product & Product List */}
-      <div className="md:w-2/3 w-full">
-        {/* Add Product Form */}
-        <div className="bg-gray-800 p-6 rounded-lg shadow mb-8">
-          <h3 className="text-xl font-bold mb-4 text-white">{editingIndex !== null ? "Edit Product" : "Add Product"}</h3>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex gap-4">
-              <input
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="Name"
-                required
-                className="flex-1 px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                placeholder="Description"
-                required
-                className="flex-1 px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 py-10 px-2">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-extrabold text-white mb-8 tracking-tight drop-shadow-lg">Product Management</h1>
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* Left: Add Product & Product List */}
+          <div className="md:w-2/3 w-full flex flex-col gap-8">
+            {/* Add Product Form */}
+            <div className="bg-gray-800/90 p-8 rounded-2xl shadow-xl border border-gray-700 mb-2">
+              <h3 className="text-2xl font-bold mb-6 text-blue-200 tracking-wide flex items-center gap-2">
+                {editingIndex !== null ? (
+                  <span className="inline-block bg-blue-700/30 px-3 py-1 rounded-full text-blue-300 text-base font-semibold">Edit Product</span>
+                ) : (
+                  <span className="inline-block bg-green-700/30 px-3 py-1 rounded-full text-white-200 text-base font-semibold">Add Product</span>
+                )}
+              </h3>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <input
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    placeholder="Name"
+                    required
+                    className="flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+                  />
+                  <input
+                    name="description"
+                    value={form.description}
+                    onChange={handleChange}
+                    placeholder="Description"
+                    required
+                    className="flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+                  />
+                </div>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <input
+                    name="price"
+                    type="number"
+                    value={form.price}
+                    onChange={handleChange}
+                    placeholder="Price"
+                    required
+                    min={0}
+                    step={0.01}
+                    className="w-full md:w-32 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+                  />
+                  <input
+                    name="stock"
+                    type="number"
+                    value={form.stock}
+                    onChange={handleChange}
+                    placeholder="Stock"
+                    required
+                    min={0}
+                    className="w-full md:w-32 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+                  />
+                  <input
+                    name="sku"
+                    type="number"
+                    value={form.sku}
+                    onChange={handleChange}
+                    placeholder="SKU"
+                    required
+                    min={0}
+                    className="w-full md:w-32 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+                  />
+                </div>
+                <div className="flex gap-3 mt-2">
+                  <button
+                    type="submit"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow-md transition-all duration-150"
+                  >
+                    {editingIndex !== null ? "Update" : "Add"}
+                  </button>
+                  {editingIndex !== null && (
+                    <button
+                      type="button"
+                      className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-2 rounded-lg font-bold shadow-md transition-all duration-150"
+                      onClick={() => { setForm(initialForm); setEditingIndex(null); }}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </form>
             </div>
-            <div className="flex gap-4">
-              <input
-                name="price"
-                type="number"
-                value={form.price}
-                onChange={handleChange}
-                placeholder="Price"
-                required
-                min={0}
-                step={0.01}
-                className="w-32 px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                name="stock"
-                type="number"
-                value={form.stock}
-                onChange={handleChange}
-                placeholder="Stock"
-                required
-                min={0}
-                className="w-32 px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                name="sku"
-                type="number"
-                value={form.sku}
-                onChange={handleChange}
-                placeholder="SKU"
-                required
-                min={0}
-                className="w-32 px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="flex gap-2 mt-2">
-              <button
-                type="submit"
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded font-bold"
-              >
-                {editingIndex !== null ? "Update" : "Add"}
-              </button>
-              {editingIndex !== null && (
-                <button
-                  type="button"
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded font-bold"
-                  onClick={() => { setForm(initialForm); setEditingIndex(null); }}
-                >
-                  Cancel
-                </button>
+            {/* Product List Table */}
+            <div className="bg-gray-800/90 p-6 rounded-2xl shadow-xl border border-gray-700">
+              <h2 className="text-2xl font-bold mb-6 text-white tracking-wide">Product List</h2>
+              {error && <div className="mb-4 text-red-400 font-semibold">{error}</div>}
+              {loading ? (
+                <div className="text-gray-300">Loading products...</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full mb-4 text-sm text-left text-gray-300 border-separate border-spacing-y-2">
+                    <thead>
+                      <tr className="bg-gray-700 text-gray-200">
+                        <th className="px-4 py-2">Name</th>
+                        <th className="px-4 py-2">Description</th>
+                        <th className="px-4 py-2">Price</th>
+                        <th className="px-4 py-2">Stock</th>
+                        <th className="px-4 py-2">SKU</th>
+                        <th className="px-4 py-2">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredProducts.map(({ id, name, description, price, stock, sku }, i) => (
+                        <tr
+                          key={id}
+                          className="bg-gray-800 hover:bg-blue-900/60 rounded-lg cursor-pointer transition-all duration-100 group"
+                          onClick={() => handleRowClick(i)}
+                        >
+                          <td className="px-4 py-2 font-semibold text-white group-hover:text-blue-300 transition-all">{name}</td>
+                          <td className="px-4 py-2">{description}</td>
+                          <td className="px-4 py-2">${price}</td>
+                          <td className="px-4 py-2">{stock}</td>
+                          <td className="px-4 py-2">{sku}</td>
+                          <td className="px-4 py-2 flex gap-2" onClick={e => e.stopPropagation()}>
+                            <button
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded shadow transition-all"
+                              onClick={() => handleEdit(i)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded shadow transition-all"
+                              onClick={() => handleDelete(i)}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
-          </form>
-        </div>
-        {/* Product List Table */}
-        <h2 className="text-2xl font-bold mb-4 text-white">Product List</h2>
-        {error && <div className="mb-4 text-red-400 font-semibold">{error}</div>}
-        {loading ? (
-          <div className="text-gray-300">Loading products...</div>
-        ) : (
-          <table className="w-full mb-8 text-sm text-left text-gray-400 border-separate border-spacing-y-2">
-            <thead>
-              <tr className="bg-gray-800 text-gray-200">
-                <th className="px-4 py-2">Name</th>
-                <th className="px-4 py-2">Description</th>
-                <th className="px-4 py-2">Price</th>
-                <th className="px-4 py-2">Stock</th>
-                <th className="px-4 py-2">SKU</th>
-                <th className="px-4 py-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.map(({ id, name, description, price, stock, sku }, i) => (
-                <tr key={id} className="bg-gray-800 hover:bg-gray-700 rounded-lg">
-                  <td className="px-4 py-2 font-semibold text-white">{name}</td>
-                  <td className="px-4 py-2">{description}</td>
-                  <td className="px-4 py-2">${price}</td>
-                  <td className="px-4 py-2">{stock}</td>
-                  <td className="px-4 py-2">{sku}</td>
-                  <td className="px-4 py-2 flex gap-2">
-                    <button
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
-                      onClick={() => handleEdit(i)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
-                      onClick={() => handleDelete(i)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-      {/* Right: Images/Description placeholder for future */}
-      <div className="md:w-1/3 w-full flex flex-col gap-8">
-        <div className="bg-gray-800 p-6 rounded-lg shadow min-h-[200px] mb-8 border-2 border-blue-200">
-          <h3 className="text-lg font-bold mb-2 text-blue-200">Images</h3>
-          {/* Big image */}
-          <div className="w-full h-64 bg-gray-900 border-2 border-blue-300 rounded flex items-center justify-center text-gray-500 mb-4 overflow-hidden">
-            <img src={demoImages[selectedImage]} alt="Selected" className="object-contain h-full w-full" />
           </div>
-          {/* Thumbnails */}
-          <div className="flex gap-2 justify-center">
-            {demoImages.slice(0, 5).map((img, idx) => (
-              <img
-                key={img}
-                src={img}
-                alt={`Thumbnail ${idx + 1}`}
-                className={`h-16 w-16 object-cover rounded border-2 cursor-pointer ${selectedImage === idx ? 'border-blue-500' : 'border-gray-500'}`}
-                onClick={() => setSelectedImage(idx)}
-              />
-            ))}
-          </div>
-        </div>
-        <div className="bg-gray-800 p-6 rounded-lg shadow min-h-[200px] border-2 border-green-200">
-          <h3 className="text-lg font-bold mb-2 text-green-200">Description/Add to cart (future)</h3>
-          <div className="w-full h-40 bg-gray-900 border-2 border-green-300 rounded flex items-center justify-center text-gray-500">
-            Product details and add-to-cart here
+          {/* Right: Images/Description placeholder for future */}
+          <div className="md:w-1/3 w-full flex flex-col gap-8">
+            <div className="bg-gradient-to-br from-blue-900/80 to-blue-700/60 p-6 rounded-2xl shadow-xl border-2 border-blue-300 min-h-[300px] flex flex-col items-center">
+              <h3 className="text-lg font-bold mb-4 text-blue-100 tracking-wide">Images</h3>
+              {/* Upload button (only show when adding or editing) */}
+              {(editingIndex !== null || form === initialForm) && (
+                <div className="mb-4 flex items-center gap-4 w-full justify-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                    className="text-gray-200 file:bg-blue-700 file:text-white file:rounded file:px-3 file:py-1 file:mr-2 file:border-none"
+                    disabled={uploading}
+                  />
+                  {uploading && <span className="text-blue-200 animate-pulse">Uploading...</span>}
+                </div>
+              )}
+              {/* Big image */}
+              <div className="w-full h-64 bg-gray-900 border-2 border-blue-400 rounded-xl flex items-center justify-center text-gray-400 mb-4 overflow-hidden shadow-lg">
+                {form.images && form.images.length > 0 ? (
+                  <img src={form.images[selectedImage]} alt="Selected" className="object-contain h-full w-full transition-all duration-200" />
+                ) : (
+                  <span>No image selected</span>
+                )}
+              </div>
+              {/* Thumbnails */}
+              <div className="flex gap-2 justify-center">
+                {form.images && form.images.slice(0, 5).map((img, idx) => (
+                  <img
+                    key={img}
+                    src={img}
+                    alt={`Thumbnail ${idx + 1}`}
+                    className={`h-16 w-16 object-cover rounded-lg border-2 cursor-pointer shadow transition-all duration-150 ${selectedImage === idx ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-500'}`}
+                    onClick={() => setSelectedImage(idx)}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-green-900/80 to-green-700/60 p-6 rounded-2xl shadow-xl border-2 border-green-300 min-h-[200px]">
+              <h3 className="text-lg font-bold mb-2 text-green-100 tracking-wide">Description/Add to cart (future)</h3>
+              <div className="w-full h-40 bg-gray-900 border-2 border-green-400 rounded-xl flex items-center justify-center text-gray-400">
+                Product details and add-to-cart here
+              </div>
+            </div>
           </div>
         </div>
       </div>
