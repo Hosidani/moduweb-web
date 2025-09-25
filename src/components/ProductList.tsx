@@ -1,10 +1,4 @@
 import React, { useEffect, useState, useRef } from "react";
-// Utility to get unique categories from all products
-function getAllCategories(products: ProductDto[]): string[] {
-  const set = new Set<string>();
-  products.forEach(p => (p.categories || []).forEach(c => set.add(c)));
-  return Array.from(set).sort();
-}
 import { ProductDto } from "../types/ProductDto";
 import {
   getProducts,
@@ -12,6 +6,13 @@ import {
   updateProduct,
   deleteProduct,
 } from "../api/productApi";
+
+// Utility to get unique categories from all products
+function getAllCategories(products: ProductDto[]): string[] {
+  const set = new Set<string>();
+  products.forEach(p => (p.categories || []).forEach(c => set.add(c)));
+  return Array.from(set).sort();
+}
 
 const initialForm: ProductDto = {
   id: undefined,
@@ -25,6 +26,8 @@ const initialForm: ProductDto = {
 };
 
 export default function ProductList() {
+  // Add showForm state to control add/edit form visibility
+  const [showForm, setShowForm] = useState(false);
   // Category filter state (must be inside component)
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [products, setProducts] = useState<ProductDto[]>([]);
@@ -83,8 +86,9 @@ export default function ProductList() {
         const productToUpdate = filteredProducts[editingIndex];
         if (!productToUpdate.id) throw new Error("Product id is missing");
         await updateProduct(productToUpdate.id, form);
+        // Update by id so we don't rely on filtered index matching the original array
         setProducts((prev) =>
-          prev.map((p, i) => (i === editingIndex ? { ...form, id: productToUpdate.id } : p))
+          prev.map((p) => (p.id === productToUpdate.id ? { ...form, id: productToUpdate.id } : p))
         );
         setEditingIndex(null);
       } else {
@@ -103,6 +107,8 @@ export default function ProductList() {
       }
       setForm(initialForm);
       setError("");
+      // Close the form after successful add/update
+      setShowForm(false);
     } catch (e: any) {
       setError(e.message);
     }
@@ -113,6 +119,8 @@ export default function ProductList() {
     setForm({ ...product, images: product.images ?? [] });
     setEditingIndex(index);
     setSelectedImage(0);
+    // Ensure the edit form is visible when clicking Edit
+    setShowForm(true);
   };
 
   // When a row is clicked, show its images in the gallery (but do not enter edit mode)
@@ -180,96 +188,109 @@ export default function ProductList() {
         <div className="flex flex-col md:flex-row gap-8">
           {/* Left: Add Product & Product List */}
           <div className="md:w-2/3 w-full flex flex-col gap-8">
-            {/* Add Product Form */}
-            <div className="bg-gray-800/90 p-8 rounded-2xl shadow-xl border border-gray-700 mb-2">
-              <h3 className="text-2xl font-bold mb-6 text-blue-200 tracking-wide flex items-center gap-2">
-                {editingIndex !== null ? (
-                  <span className="inline-block bg-blue-700/30 px-3 py-1 rounded-full text-blue-300 text-base font-semibold">Edit Product</span>
-                ) : (
-                  <span className="inline-block bg-green-700/30 px-3 py-1 rounded-full text-white-200 text-base font-semibold">Add Product</span>
-                )}
-              </h3>
-              <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <input
-                    name="name"
-                    value={form.name}
-                    onChange={handleChange}
-                    placeholder="Name"
-                    required
-                    className="flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
-                  />
-                  <input
-                    name="description"
-                    value={form.description}
-                    onChange={handleChange}
-                    placeholder="Description"
-                    required
-                    className="flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
-                  />
-                </div>
-                <div className="flex flex-col md:flex-row gap-4">
-                  <input
-                    name="categories"
-                    value={form.categories.join(', ')}
-                    onChange={handleCategoryInput}
-                    placeholder="Categories (comma separated, e.g. Electronics, Home)"
-                    required
-                    className="flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all shadow-sm"
-                  />
-                </div>
-                <div className="flex flex-col md:flex-row gap-4">
-                  <input
-                    name="price"
-                    type="number"
-                    value={form.price}
-                    onChange={handleChange}
-                    placeholder="Price"
-                    required
-                    min={0}
-                    step={0.01}
-                    className="w-full md:w-32 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
-                  />
-                  <input
-                    name="stock"
-                    type="number"
-                    value={form.stock}
-                    onChange={handleChange}
-                    placeholder="Stock"
-                    required
-                    min={0}
-                    className="w-full md:w-32 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
-                  />
-                  <input
-                    name="sku"
-                    type="number"
-                    value={form.sku}
-                    onChange={handleChange}
-                    placeholder="SKU"
-                    required
-                    min={0}
-                    className="w-full md:w-32 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
-                  />
-                </div>
-                <div className="flex gap-3 mt-2">
-                  <button
-                    type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow-md transition-all duration-150"
-                  >
-                    {editingIndex !== null ? "Update" : "Add"}
-                  </button>
-                  {editingIndex !== null && (
+            {/* Add Product Button at top */}
+            {editingIndex === null && (
+              <button
+                className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-bold shadow-md transition-all duration-150 mb-4"
+                onClick={() => {
+                  setEditingIndex(null);
+                  setForm(initialForm);
+                  setShowForm(true);
+                }}
+              >
+                Add Product
+              </button>
+            )}
+            {/* Add Product Form (only show when showForm is true) */}
+            {showForm && (
+              <div className="bg-gray-800/90 p-8 rounded-2xl shadow-xl border border-gray-700 mb-2">
+                <h3 className="text-2xl font-bold mb-6 text-blue-200 tracking-wide flex items-center gap-2">
+                  {editingIndex !== null ? (
+                    <span className="inline-block bg-blue-700/30 px-3 py-1 rounded-full text-blue-300 text-base font-semibold">Edit Product</span>
+                  ) : (
+                    <span className="inline-block bg-green-700/30 px-3 py-1 rounded-full text-green-300 text-base font-semibold">Add Product</span>
+                  )}
+                </h3>
+                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <input
+                      name="name"
+                      value={form.name}
+                      onChange={handleChange}
+                      placeholder="Name"
+                      required
+                      className="flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+                    />
+                    <input
+                      name="description"
+                      value={form.description}
+                      onChange={handleChange}
+                      placeholder="Description"
+                      required
+                      className="flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <input
+                      name="categories"
+                      value={form.categories.join(', ')}
+                      onChange={handleCategoryInput}
+                      placeholder="Categories (comma separated, e.g. Electronics, Home)"
+                      required
+                      className="flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all shadow-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <input
+                      name="price"
+                      type="number"
+                      value={form.price}
+                      onChange={handleChange}
+                      placeholder="Price"
+                      required
+                      min={0}
+                      step={0.01}
+                      className="w-full md:w-32 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+                    />
+                    <input
+                      name="stock"
+                      type="number"
+                      value={form.stock}
+                      onChange={handleChange}
+                      placeholder="Stock"
+                      required
+                      min={0}
+                      className="w-full md:w-32 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+                    />
+                    <input
+                      name="sku"
+                      type="number"
+                      value={form.sku}
+                      onChange={handleChange}
+                      placeholder="SKU"
+                      required
+                      min={0}
+                      className="w-full md:w-32 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+                    />
+                  </div>
+                  <div className="flex gap-3 mt-2">
+                    <button
+                      type="submit"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow-md transition-all duration-150"
+                    >
+                      {editingIndex !== null ? "Update" : "Add"}
+                    </button>
                     <button
                       type="button"
                       className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-2 rounded-lg font-bold shadow-md transition-all duration-150"
-                      onClick={() => { setForm(initialForm); setEditingIndex(null); }}
+                      onClick={() => { setForm(initialForm); setEditingIndex(null); setShowForm(false); }}
                     >
                       Cancel
                     </button>
-                  )}
-                </div>
-              </form>
-            </div>
+                  </div>
+                </form>
+              </div>
+            )}
             {/* Category Filter UI */}
             <div className="mb-4">
               <div className="flex flex-wrap gap-2 items-center">

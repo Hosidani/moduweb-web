@@ -1,12 +1,12 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useState, useRef } from "react";
+import { getProducts, createProduct, updateProduct, deleteProduct, } from "../api/productApi";
 // Utility to get unique categories from all products
 function getAllCategories(products) {
     const set = new Set();
     products.forEach(p => (p.categories || []).forEach(c => set.add(c)));
     return Array.from(set).sort();
 }
-import { getProducts, createProduct, updateProduct, deleteProduct, } from "../api/productApi";
 const initialForm = {
     id: undefined,
     name: "",
@@ -18,6 +18,8 @@ const initialForm = {
     categories: [],
 };
 export default function ProductList() {
+    // Add showForm state to control add/edit form visibility
+    const [showForm, setShowForm] = useState(false);
     // Category filter state (must be inside component)
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [products, setProducts] = useState([]);
@@ -68,7 +70,8 @@ export default function ProductList() {
                 if (!productToUpdate.id)
                     throw new Error("Product id is missing");
                 await updateProduct(productToUpdate.id, form);
-                setProducts((prev) => prev.map((p, i) => (i === editingIndex ? { ...form, id: productToUpdate.id } : p)));
+                // Update by id so we don't rely on filtered index matching the original array
+                setProducts((prev) => prev.map((p) => (p.id === productToUpdate.id ? { ...form, id: productToUpdate.id } : p)));
                 setEditingIndex(null);
             }
             else {
@@ -87,6 +90,8 @@ export default function ProductList() {
             }
             setForm(initialForm);
             setError("");
+            // Close the form after successful add/update
+            setShowForm(false);
         }
         catch (e) {
             setError(e.message);
@@ -97,6 +102,8 @@ export default function ProductList() {
         setForm({ ...product, images: product.images ?? [] });
         setEditingIndex(index);
         setSelectedImage(0);
+        // Ensure the edit form is visible when clicking Edit
+        setShowForm(true);
     };
     // When a row is clicked, show its images in the gallery (but do not enter edit mode)
     const handleRowClick = (index) => {
@@ -159,7 +166,11 @@ export default function ProductList() {
                 fileInputRef.current.value = "";
         }
     };
-    return (_jsx("div", { className: "min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 py-10 px-2", children: _jsxs("div", { className: "max-w-7xl mx-auto", children: [_jsx("h1", { className: "text-4xl font-extrabold text-white mb-8 tracking-tight drop-shadow-lg", children: "Product Management" }), _jsxs("div", { className: "flex flex-col md:flex-row gap-8", children: [_jsxs("div", { className: "md:w-2/3 w-full flex flex-col gap-8", children: [_jsxs("div", { className: "bg-gray-800/90 p-8 rounded-2xl shadow-xl border border-gray-700 mb-2", children: [_jsx("h3", { className: "text-2xl font-bold mb-6 text-blue-200 tracking-wide flex items-center gap-2", children: editingIndex !== null ? (_jsx("span", { className: "inline-block bg-blue-700/30 px-3 py-1 rounded-full text-blue-300 text-base font-semibold", children: "Edit Product" })) : (_jsx("span", { className: "inline-block bg-green-700/30 px-3 py-1 rounded-full text-white-200 text-base font-semibold", children: "Add Product" })) }), _jsxs("form", { onSubmit: handleSubmit, className: "flex flex-col gap-6", children: [_jsxs("div", { className: "flex flex-col md:flex-row gap-4", children: [_jsx("input", { name: "name", value: form.name, onChange: handleChange, placeholder: "Name", required: true, className: "flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm" }), _jsx("input", { name: "description", value: form.description, onChange: handleChange, placeholder: "Description", required: true, className: "flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm" })] }), _jsx("div", { className: "flex flex-col md:flex-row gap-4", children: _jsx("input", { name: "categories", value: form.categories.join(', '), onChange: handleCategoryInput, placeholder: "Categories (comma separated, e.g. Electronics, Home)", required: true, className: "flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all shadow-sm" }) }), _jsxs("div", { className: "flex flex-col md:flex-row gap-4", children: [_jsx("input", { name: "price", type: "number", value: form.price, onChange: handleChange, placeholder: "Price", required: true, min: 0, step: 0.01, className: "w-full md:w-32 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm" }), _jsx("input", { name: "stock", type: "number", value: form.stock, onChange: handleChange, placeholder: "Stock", required: true, min: 0, className: "w-full md:w-32 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm" }), _jsx("input", { name: "sku", type: "number", value: form.sku, onChange: handleChange, placeholder: "SKU", required: true, min: 0, className: "w-full md:w-32 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm" })] }), _jsxs("div", { className: "flex gap-3 mt-2", children: [_jsx("button", { type: "submit", className: "bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow-md transition-all duration-150", children: editingIndex !== null ? "Update" : "Add" }), editingIndex !== null && (_jsx("button", { type: "button", className: "bg-gray-600 hover:bg-gray-700 text-white px-8 py-2 rounded-lg font-bold shadow-md transition-all duration-150", onClick: () => { setForm(initialForm); setEditingIndex(null); }, children: "Cancel" }))] })] })] }), _jsx("div", { className: "mb-4", children: _jsxs("div", { className: "flex flex-wrap gap-2 items-center", children: [_jsx("span", { className: "text-gray-300 font-semibold mr-2", children: "Filter by Category:" }), allCategories.length === 0 && (_jsx("span", { className: "text-gray-400", children: "No categories available" })), allCategories.map((cat) => (_jsx("button", { type: "button", className: `px-3 py-1 rounded-full border text-sm font-medium transition-all
+    return (_jsx("div", { className: "min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 py-10 px-2", children: _jsxs("div", { className: "max-w-7xl mx-auto", children: [_jsx("h1", { className: "text-4xl font-extrabold text-white mb-8 tracking-tight drop-shadow-lg", children: "Product Management" }), _jsxs("div", { className: "flex flex-col md:flex-row gap-8", children: [_jsxs("div", { className: "md:w-2/3 w-full flex flex-col gap-8", children: [editingIndex === null && (_jsx("button", { className: "bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-bold shadow-md transition-all duration-150 mb-4", onClick: () => {
+                                        setEditingIndex(null);
+                                        setForm(initialForm);
+                                        setShowForm(true);
+                                    }, children: "Add Product" })), showForm && (_jsxs("div", { className: "bg-gray-800/90 p-8 rounded-2xl shadow-xl border border-gray-700 mb-2", children: [_jsx("h3", { className: "text-2xl font-bold mb-6 text-blue-200 tracking-wide flex items-center gap-2", children: editingIndex !== null ? (_jsx("span", { className: "inline-block bg-blue-700/30 px-3 py-1 rounded-full text-blue-300 text-base font-semibold", children: "Edit Product" })) : (_jsx("span", { className: "inline-block bg-green-700/30 px-3 py-1 rounded-full text-green-300 text-base font-semibold", children: "Add Product" })) }), _jsxs("form", { onSubmit: handleSubmit, className: "flex flex-col gap-6", children: [_jsxs("div", { className: "flex flex-col md:flex-row gap-4", children: [_jsx("input", { name: "name", value: form.name, onChange: handleChange, placeholder: "Name", required: true, className: "flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm" }), _jsx("input", { name: "description", value: form.description, onChange: handleChange, placeholder: "Description", required: true, className: "flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm" })] }), _jsx("div", { className: "flex flex-col md:flex-row gap-4", children: _jsx("input", { name: "categories", value: form.categories.join(', '), onChange: handleCategoryInput, placeholder: "Categories (comma separated, e.g. Electronics, Home)", required: true, className: "flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all shadow-sm" }) }), _jsxs("div", { className: "flex flex-col md:flex-row gap-4", children: [_jsx("input", { name: "price", type: "number", value: form.price, onChange: handleChange, placeholder: "Price", required: true, min: 0, step: 0.01, className: "w-full md:w-32 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm" }), _jsx("input", { name: "stock", type: "number", value: form.stock, onChange: handleChange, placeholder: "Stock", required: true, min: 0, className: "w-full md:w-32 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm" }), _jsx("input", { name: "sku", type: "number", value: form.sku, onChange: handleChange, placeholder: "SKU", required: true, min: 0, className: "w-full md:w-32 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm" })] }), _jsxs("div", { className: "flex gap-3 mt-2", children: [_jsx("button", { type: "submit", className: "bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-bold shadow-md transition-all duration-150", children: editingIndex !== null ? "Update" : "Add" }), _jsx("button", { type: "button", className: "bg-gray-600 hover:bg-gray-700 text-white px-8 py-2 rounded-lg font-bold shadow-md transition-all duration-150", onClick: () => { setForm(initialForm); setEditingIndex(null); setShowForm(false); }, children: "Cancel" })] })] })] })), _jsx("div", { className: "mb-4", children: _jsxs("div", { className: "flex flex-wrap gap-2 items-center", children: [_jsx("span", { className: "text-gray-300 font-semibold mr-2", children: "Filter by Category:" }), allCategories.length === 0 && (_jsx("span", { className: "text-gray-400", children: "No categories available" })), allCategories.map((cat) => (_jsx("button", { type: "button", className: `px-3 py-1 rounded-full border text-sm font-medium transition-all
                       ${selectedCategories.includes(cat)
                                                     ? 'bg-blue-600 text-white border-blue-400 shadow'
                                                     : 'bg-gray-700 text-gray-200 border-gray-500 hover:bg-blue-800 hover:text-white'}`, onClick: () => {
