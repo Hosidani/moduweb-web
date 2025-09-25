@@ -1,4 +1,10 @@
 import React, { useEffect, useState, useRef } from "react";
+// Utility to get unique categories from all products
+function getAllCategories(products: ProductDto[]): string[] {
+  const set = new Set<string>();
+  products.forEach(p => (p.categories || []).forEach(c => set.add(c)));
+  return Array.from(set).sort();
+}
 import { ProductDto } from "../types/ProductDto";
 import {
   getProducts,
@@ -15,9 +21,12 @@ const initialForm: ProductDto = {
   stock: 0,
   sku: 0,
   images: [],
+  categories: [],
 };
 
 export default function ProductList() {
+  // Category filter state (must be inside component)
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [form, setForm] = useState<ProductDto>(initialForm);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -39,9 +48,17 @@ export default function ProductList() {
   }, []);
 
   // Only show products with a valid id and product identifier (e.g., has sku and price)
-  const filteredProducts = products.filter(
+  let filteredProducts = products.filter(
     (p) => !!p.id && typeof p.sku === 'number' && typeof p.price === 'number'
   );
+  // Filter by selected categories if any
+  if (selectedCategories.length > 0) {
+    filteredProducts = filteredProducts.filter(p =>
+      p.categories && selectedCategories.every(cat => p.categories.includes(cat))
+    );
+  }
+  // All unique categories for filter UI
+  const allCategories = getAllCategories(products);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -49,6 +66,14 @@ export default function ProductList() {
       ...form,
       [name]: type === "number" ? Number(value) : value,
     });
+  };
+
+  // Handle category input (comma-separated, tag style)
+  const handleCategoryInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Split by comma, trim, remove empty
+    const categories = value.split(',').map(c => c.trim()).filter(Boolean);
+    setForm({ ...form, categories });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,14 +109,16 @@ export default function ProductList() {
   };
 
   const handleEdit = (index: number) => {
-    setForm({ ...filteredProducts[index] });
+    const product = filteredProducts[index];
+    setForm({ ...product, images: product.images ?? [] });
     setEditingIndex(index);
     setSelectedImage(0);
   };
 
   // When a row is clicked, show its images in the gallery (but do not enter edit mode)
   const handleRowClick = (index: number) => {
-    setForm({ ...filteredProducts[index] });
+    const product = filteredProducts[index];
+    setForm({ ...product, images: product.images ?? [] });
     setEditingIndex(null);
     setSelectedImage(0);
   };
@@ -126,7 +153,8 @@ export default function ProductList() {
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const res = await fetch(`${API_BASE_URL}/image/upload`, {
+  // Use /image/upload (API_BASE_URL already includes /api)
+  const res = await fetch(`${API_BASE_URL}/image/upload`, {
         method: "POST",
         body: formData,
       });
@@ -182,6 +210,16 @@ export default function ProductList() {
                 </div>
                 <div className="flex flex-col md:flex-row gap-4">
                   <input
+                    name="categories"
+                    value={form.categories.join(', ')}
+                    onChange={handleCategoryInput}
+                    placeholder="Categories (comma separated, e.g. Electronics, Home)"
+                    required
+                    className="flex-1 px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all shadow-sm"
+                  />
+                </div>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <input
                     name="price"
                     type="number"
                     value={form.price}
@@ -232,6 +270,43 @@ export default function ProductList() {
                 </div>
               </form>
             </div>
+            {/* Category Filter UI */}
+            <div className="mb-4">
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="text-gray-300 font-semibold mr-2">Filter by Category:</span>
+                {allCategories.length === 0 && (
+                  <span className="text-gray-400">No categories available</span>
+                )}
+                {allCategories.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    className={`px-3 py-1 rounded-full border text-sm font-medium transition-all
+                      ${selectedCategories.includes(cat)
+                        ? 'bg-blue-600 text-white border-blue-400 shadow'
+                        : 'bg-gray-700 text-gray-200 border-gray-500 hover:bg-blue-800 hover:text-white'}`}
+                    onClick={() => {
+                      setSelectedCategories((prev) =>
+                        prev.includes(cat)
+                          ? prev.filter((c) => c !== cat)
+                          : [...prev, cat]
+                      );
+                    }}
+                  >
+                    {cat}
+                  </button>
+                ))}
+                {selectedCategories.length > 0 && (
+                  <button
+                    type="button"
+                    className="ml-2 px-2 py-1 rounded bg-gray-600 text-white text-xs border border-gray-400 hover:bg-gray-700"
+                    onClick={() => setSelectedCategories([])}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
             {/* Product List Table */}
             <div className="bg-gray-800/90 p-6 rounded-2xl shadow-xl border border-gray-700">
               <h2 className="text-2xl font-bold mb-6 text-white tracking-wide">Product List</h2>
@@ -245,6 +320,7 @@ export default function ProductList() {
                       <tr className="bg-gray-700 text-gray-200">
                         <th className="px-4 py-2">Name</th>
                         <th className="px-4 py-2">Description</th>
+                        <th className="px-4 py-2">Categories</th>
                         <th className="px-4 py-2">Price</th>
                         <th className="px-4 py-2">Stock</th>
                         <th className="px-4 py-2">SKU</th>
@@ -252,7 +328,7 @@ export default function ProductList() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredProducts.map(({ id, name, description, price, stock, sku }, i) => (
+                      {filteredProducts.map(({ id, name, description, categories = [], price, stock, sku }, i) => (
                         <tr
                           key={id}
                           className="bg-gray-800 hover:bg-blue-900/60 rounded-lg cursor-pointer transition-all duration-100 group"
@@ -260,6 +336,19 @@ export default function ProductList() {
                         >
                           <td className="px-4 py-2 font-semibold text-white group-hover:text-blue-300 transition-all">{name}</td>
                           <td className="px-4 py-2">{description}</td>
+                          <td className="px-4 py-2">
+                            {categories.length === 0 ? (
+                              <span className="text-gray-400 italic">None</span>
+                            ) : (
+                              <div className="flex flex-wrap gap-1">
+                                {categories.map((cat) => (
+                                  <span key={cat} className="bg-blue-700/70 text-blue-100 px-2 py-0.5 rounded-full text-xs font-semibold border border-blue-400">
+                                    {cat}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </td>
                           <td className="px-4 py-2">${price}</td>
                           <td className="px-4 py-2">{stock}</td>
                           <td className="px-4 py-2">{sku}</td>
@@ -305,6 +394,7 @@ export default function ProductList() {
               )}
               {/* Big image */}
               <div className="w-full h-64 bg-gray-900 border-2 border-blue-400 rounded-xl flex items-center justify-center text-gray-400 mb-4 overflow-hidden shadow-lg">
+                {(() => { console.log('form.images', form.images); return null; })()}
                 {form.images && form.images.length > 0 ? (
                   <img src={form.images[selectedImage]} alt="Selected" className="object-contain h-full w-full transition-all duration-200" />
                 ) : (
