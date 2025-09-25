@@ -18,6 +18,7 @@ const BaseLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <Link to="/login">Login</Link>
           <Link to="/dashboard">Dashboard</Link>
           <Link to="/booking">Booking</Link>
+          <Link to="/product">Products</Link>
           <Link to="/about">About Us</Link>
         </nav>
       </header>

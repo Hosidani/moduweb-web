@@ -6,6 +6,8 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import BookingPage from "./pages/BookingPage";
 import CreateUserPage from "./pages/CreateUserPage";
+import ProductPage from "./pages/ProductPage";
+import Product from "./pages/Product";
 import BaseLayout from "./components/BaseLayout";
 
 console.log('API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
@@ -22,6 +24,8 @@ function App() {
           <Route path="/create-user" element={<CreateUserPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/booking" element={<BookingPage />} />
+          <Route path="/product" element={<ProductPage />} />
+          <Route path="/products" element={<Product />} />
         </Routes>
       </BaseLayout>
     </Router>
