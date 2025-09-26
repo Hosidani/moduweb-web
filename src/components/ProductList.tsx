@@ -26,6 +26,37 @@ const initialForm: ProductDto = {
 };
 
 export default function ProductList() {
+  // Cart state: [{ productId, quantity, stock, name }]
+  const [cart, setCart] = useState<{ productId: string, quantity: number, stock: number, name: string }[]>([]);
+  // Quantity input for Add to Cart
+  const [addQty, setAddQty] = useState(1);
+
+  // Add to Cart handler
+  const handleAddToCart = (product: ProductDto, quantity: number) => {
+    if (!product.id || typeof product.id !== 'string') return;
+    const cartItem = cart.find(item => item.productId === product.id);
+    const availableStock = product.stock ?? 0;
+    const qtyToAdd = Math.max(1, Math.min(quantity, availableStock));
+    if (qtyToAdd < 1) {
+      console.log(`Cannot add ${product.name}: out of stock.`);
+      return;
+    }
+    if (cartItem) {
+      const newQty = Math.min(cartItem.quantity + qtyToAdd, availableStock);
+      setCart(prev => prev.map(item =>
+        item.productId === product.id
+          ? { ...item, quantity: newQty }
+          : item
+      ));
+      console.log(`Set quantity for ${product.name} in cart to ${newQty}.`, cart);
+    } else {
+      setCart(prev => [...prev, { productId: product.id as string, quantity: qtyToAdd, stock: availableStock, name: product.name }]);
+      console.log(`Added ${product.name} to cart with quantity ${qtyToAdd}.`, cart);
+    }
+    setTimeout(() => {
+      console.log('Cart state:', cart);
+    }, 0);
+  };
   // Add showForm state to control add/edit form visibility
   const [showForm, setShowForm] = useState(false);
   // Category filter state (must be inside component)
@@ -514,11 +545,63 @@ export default function ProductList() {
                 ))}
               </div>
             </div>
-            <div className="bg-gradient-to-br from-green-900/80 to-green-700/60 p-6 rounded-2xl shadow-xl border-2 border-green-300 min-h-[200px]">
-              <h3 className="text-lg font-bold mb-2 text-green-100 tracking-wide">Description/Add to cart (future)</h3>
-              <div className="w-full h-40 bg-gray-900 border-2 border-green-400 rounded-xl flex items-center justify-center text-gray-400">
-                Product details and add-to-cart here
+            {/* Description window */}
+            <div className="bg-gradient-to-br from-green-900/80 to-green-700/60 p-6 rounded-2xl shadow-xl border-2 border-green-300 min-h-[120px] mb-4">
+              <h3 className="text-lg font-bold mb-2 text-green-100 tracking-wide">Description</h3>
+              <div className="w-full h-24 bg-gray-900 border-2 border-green-400 rounded-xl flex items-center justify-center text-gray-400">
+                Product details here
               </div>
+            </div>
+            {/* Add to cart window */}
+            <div className="bg-gradient-to-br from-yellow-900/80 to-yellow-700/60 p-6 rounded-2xl shadow-xl border-2 border-yellow-300 min-h-[120px]">
+              <h3 className="text-lg font-bold mb-2 text-yellow-100 tracking-wide">Add to cart</h3>
+              <div className="w-full h-24 bg-gray-900 border-2 border-yellow-400 rounded-xl flex flex-col items-center justify-center text-gray-400">
+                {/* Add to Cart button for selected product (if any) */}
+                {form && form.id ? (
+                  <div className="flex flex-col items-center gap-2 w-full">
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="addQty" className="text-yellow-200 font-semibold">Qty:</label>
+                      <input
+                        id="addQty"
+                        type="number"
+                        min={1}
+                        max={form.stock ?? 1}
+                        value={addQty}
+                        onChange={e => setAddQty(Math.max(1, Math.min(Number(e.target.value), form.stock ?? 1)))}
+                        className="w-16 px-2 py-1 rounded bg-gray-800 text-yellow-100 border border-yellow-400 text-center"
+                        disabled={form.stock === 0}
+                      />
+                      <span className="text-yellow-300 text-xs">/ {form.stock ?? 0} in stock</span>
+                    </div>
+                    <button
+                      className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-6 py-2 rounded-lg shadow transition-all"
+                      onClick={() => handleAddToCart(form, addQty)}
+                      disabled={form.stock === 0}
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                ) : (
+                  <span>Select a product to add to cart</span>
+                )}
+              </div>
+            </div>
+
+            {/* Cart List */}
+            <div className="mt-2 bg-gray-900/80 rounded-xl p-4 border border-gray-700">
+              <h3 className="text-lg font-bold text-yellow-200 mb-2">Cart</h3>
+              {cart.length === 0 ? (
+                <div className="text-gray-400">Cart is empty.</div>
+              ) : (
+                <ul className="divide-y divide-gray-700">
+                  {cart.map(item => (
+                    <li key={item.productId} className="py-2 flex justify-between items-center">
+                      <span className="text-white">{item.name}</span>
+                      <span className="text-gray-300">Qty: {item.quantity} / Stock: {item.stock}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </div>
