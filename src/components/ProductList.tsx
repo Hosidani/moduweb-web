@@ -667,6 +667,23 @@ export default function ProductList() {
                           onClick={() => handleIncreaseQty(item)}
                           disabled={item.quantity >= item.stock}
                         >+</button>
+                        <button
+                          className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
+                          onClick={async () => {
+                            try {
+                              const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+                              const res = await axios.post(
+                                `${API_BASE_URL}/cart/remove`,
+                                { productId: item.productId },
+                                { withCredentials: true }
+                              );
+                              setCart(res.data);
+                              console.log('Cart updated from backend:', res.data);
+                            } catch (err) {
+                              console.error('Failed to remove item:', err);
+                            }
+                          }}
+                        >Remove</button>
                       </div>
                     </li>
                   ))}
