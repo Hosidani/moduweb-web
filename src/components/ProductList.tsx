@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import axios from "axios";
 import { ProductDto } from "../types/ProductDto";
 import {
   getProducts,
@@ -31,31 +32,88 @@ export default function ProductList() {
   // Quantity input for Add to Cart
   const [addQty, setAddQty] = useState(1);
 
+  // Increase quantity in cart
+  const handleIncreaseQty = async (item: { productId: string, quantity: number, stock: number, name: string }) => {
+    if (item.quantity >= item.stock) return;
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+      const res = await axios.post(
+        `${API_BASE_URL}/cart/add`,
+        {
+          productId: item.productId,
+          quantity: 1 // add one more
+        },
+        { withCredentials: true }
+      );
+      setCart(res.data);
+      console.log('Cart updated from backend:', res.data);
+    } catch (err) {
+      console.error('Failed to increase quantity:', err);
+    }
+  };
+
+  // Decrease quantity in cart
+  const handleDecreaseQty = async (item: { productId: string, quantity: number, stock: number, name: string }) => {
+    if (item.quantity <= 1) {
+      // Remove item from cart
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+        const res = await axios.post(
+          `${API_BASE_URL}/cart/remove`,
+          {
+            productId: item.productId
+          },
+          { withCredentials: true }
+        );
+        setCart(res.data);
+        console.log('Cart updated from backend:', res.data);
+      } catch (err) {
+        console.error('Failed to remove item:', err);
+      }
+    } else {
+      // Decrease quantity by 1
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+        const res = await axios.post(
+          `${API_BASE_URL}/cart/add`,
+          {
+            productId: item.productId,
+            quantity: -1 // decrease by one
+          },
+          { withCredentials: true }
+        );
+        setCart(res.data);
+        console.log('Cart updated from backend:', res.data);
+      } catch (err) {
+        console.error('Failed to decrease quantity:', err);
+      }
+    }
+  };
+
   // Add to Cart handler
-  const handleAddToCart = (product: ProductDto, quantity: number) => {
+  const handleAddToCart = async (product: ProductDto, quantity: number) => {
     if (!product.id || typeof product.id !== 'string') return;
-    const cartItem = cart.find(item => item.productId === product.id);
     const availableStock = product.stock ?? 0;
     const qtyToAdd = Math.max(1, Math.min(quantity, availableStock));
     if (qtyToAdd < 1) {
       console.log(`Cannot add ${product.name}: out of stock.`);
       return;
     }
-    if (cartItem) {
-      const newQty = Math.min(cartItem.quantity + qtyToAdd, availableStock);
-      setCart(prev => prev.map(item =>
-        item.productId === product.id
-          ? { ...item, quantity: newQty }
-          : item
-      ));
-      console.log(`Set quantity for ${product.name} in cart to ${newQty}.`, cart);
-    } else {
-      setCart(prev => [...prev, { productId: product.id as string, quantity: qtyToAdd, stock: availableStock, name: product.name }]);
-      console.log(`Added ${product.name} to cart with quantity ${qtyToAdd}.`, cart);
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+      const res = await axios.post(
+        `${API_BASE_URL}/cart/add`,
+        {
+          productId: product.id,
+          quantity: qtyToAdd
+        },
+        { withCredentials: true }
+      );
+      setCart(res.data); // backend returns updated cart
+      console.log('Cart updated from backend:', res.data);
+    } catch (err) {
+      console.error('Failed to add to cart:', err);
     }
-    setTimeout(() => {
-      console.log('Cart state:', cart);
-    }, 0);
   };
   // Add showForm state to control add/edit form visibility
   const [showForm, setShowForm] = useState(false);
@@ -598,6 +656,18 @@ export default function ProductList() {
                     <li key={item.productId} className="py-2 flex justify-between items-center">
                       <span className="text-white">{item.name}</span>
                       <span className="text-gray-300">Qty: {item.quantity} / Stock: {item.stock}</span>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded"
+                          onClick={() => handleDecreaseQty(item)}
+                          disabled={item.quantity <= 0}
+                        >-</button>
+                        <button
+                          className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded"
+                          onClick={() => handleIncreaseQty(item)}
+                          disabled={item.quantity >= item.stock}
+                        >+</button>
+                      </div>
                     </li>
                   ))}
                 </ul>
