@@ -27,6 +27,11 @@ const initialForm: ProductDto = {
 };
 
 export default function ProductList() {
+  // Remove useNavigate, use local state for view switching
+  // ...existing code...
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+  // New state: show checkout info form after checkout
+  const [showCheckoutInfo, setShowCheckoutInfo] = useState(false);
   // Cart state: [{ productId, quantity, stock, name }]
   const [cart, setCart] = useState<{ productId: string, quantity: number, stock: number, name: string }[]>([]);
   // Quantity input for Add to Cart
@@ -648,7 +653,24 @@ export default function ProductList() {
             {/* Cart List */}
             <div className="mt-2 bg-gray-900/80 rounded-xl p-4 border border-gray-700">
               <h3 className="text-lg font-bold text-yellow-200 mb-2">Cart</h3>
-              {cart.length === 0 ? (
+              {/* If showCheckoutInfo, show checkout info form and hide cart/product list/images */}
+              {showCheckoutInfo ? (
+                <div className="bg-gray-800/90 p-8 rounded-2xl shadow-xl border border-gray-700 text-center">
+                  <h2 className="text-2xl font-bold text-green-300 mb-4">Checkout Information</h2>
+                  {/* Placeholder for contact/payment/address info form */}
+                  <div className="text-gray-200 mb-6">Please enter your contact, payment, and address information below.</div>
+                  {/* Example fields, not wired up yet */}
+                  <form className="flex flex-col gap-4 max-w-md mx-auto">
+                    <input type="text" placeholder="Full Name" className="px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600" />
+                    <input type="email" placeholder="Email Address" className="px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600" />
+                    <input type="text" placeholder="Shipping Address" className="px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600" />
+                    <input type="text" placeholder="Payment Details" className="px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600" />
+                    <button type="submit" className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow transition-all">Submit Order</button>
+                  </form>
+                </div>
+              ) : checkoutSuccess ? (
+                <div className="text-green-400 font-bold text-lg text-center py-6">Order placed! Thank you for your purchase.</div>
+              ) : cart.length === 0 ? (
                 <div className="text-gray-400">Cart is empty.</div>
               ) : (
                 <>
@@ -700,9 +722,9 @@ export default function ProductList() {
                           {},
                           { withCredentials: true }
                         );
-                        // Optionally update cart state or show confirmation
+                        setCheckoutSuccess(true);
+                        setShowCheckoutInfo(true); // Show checkout info form
                         console.log('Reservation response:', res.data);
-                        // You may want to show a success message or redirect here
                       } catch (err) {
                         console.error('Failed to reserve cart:', err);
                       }
