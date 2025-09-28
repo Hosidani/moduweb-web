@@ -651,43 +651,64 @@ export default function ProductList() {
               {cart.length === 0 ? (
                 <div className="text-gray-400">Cart is empty.</div>
               ) : (
-                <ul className="divide-y divide-gray-700">
-                  {cart.map(item => (
-                    <li key={item.productId} className="py-2 flex justify-between items-center">
-                      <span className="text-white">{item.name}</span>
-                      <span className="text-gray-300">Qty: {item.quantity} / Stock: {item.stock}</span>
-                      <div className="flex gap-2 ml-4">
-                        <button
-                          className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded"
-                          onClick={() => handleDecreaseQty(item)}
-                          disabled={item.quantity <= 0}
-                        >-</button>
-                        <button
-                          className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded"
-                          onClick={() => handleIncreaseQty(item)}
-                          disabled={item.quantity >= item.stock}
-                        >+</button>
-                        <button
-                          className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
-                          onClick={async () => {
-                            try {
-                              const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
-                              const res = await axios.post(
-                                `${API_BASE_URL}/cart/remove`,
-                                { productId: item.productId },
-                                { withCredentials: true }
-                              );
-                              setCart(res.data);
-                              console.log('Cart updated from backend:', res.data);
-                            } catch (err) {
-                              console.error('Failed to remove item:', err);
-                            }
-                          }}
-                        >Remove</button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <ul className="divide-y divide-gray-700">
+                    {cart.map(item => (
+                      <li key={item.productId} className="py-2 flex justify-between items-center">
+                        <span className="text-white">{item.name}</span>
+                        <span className="text-gray-300">Qty: {item.quantity} / Stock: {item.stock}</span>
+                        <div className="flex gap-2 ml-4">
+                          <button
+                            className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded"
+                            onClick={() => handleDecreaseQty(item)}
+                            disabled={item.quantity <= 0}
+                          >-</button>
+                          <button
+                            className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded"
+                            onClick={() => handleIncreaseQty(item)}
+                            disabled={item.quantity >= item.stock}
+                          >+</button>
+                          <button
+                            className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
+                            onClick={async () => {
+                              try {
+                                const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+                                const res = await axios.post(
+                                  `${API_BASE_URL}/cart/remove`,
+                                  { productId: item.productId },
+                                  { withCredentials: true }
+                                );
+                                setCart(res.data);
+                                console.log('Cart updated from backend:', res.data);
+                              } catch (err) {
+                                console.error('Failed to remove item:', err);
+                              }
+                            }}
+                          >Remove</button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  {/* Single Checkout button for the whole cart */}
+                  <button
+                    className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow transition-all"
+                    onClick={async () => {
+                      try {
+                        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+                        const res = await axios.post(
+                          `${API_BASE_URL}/cart/reserve`,
+                          {},
+                          { withCredentials: true }
+                        );
+                        // Optionally update cart state or show confirmation
+                        console.log('Reservation response:', res.data);
+                        // You may want to show a success message or redirect here
+                      } catch (err) {
+                        console.error('Failed to reserve cart:', err);
+                      }
+                    }}
+                  >Checkout</button>
+                </>
               )}
             </div>
           </div>
