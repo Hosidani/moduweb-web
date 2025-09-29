@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import ProductList from "./components/ProductList";
+import Checkout from "./pages/Checkout";
 import Homepage from "./pages/HomePage";
 import AboutPage from "./pages/AboutPage";
 import PrivacyPage from "./pages/PrivacyPage";
@@ -26,6 +28,8 @@ function App() {
           <Route path="/booking" element={<BookingPage />} />
           <Route path="/product" element={<ProductPage />} />
           <Route path="/products" element={<Product />} />
+          <Route path="/product-list" element={<ProductList />} />
+          <Route path="/product/checkout" element={<Checkout cart={[]} onSubmit={() => {}} />} />
         </Routes>
       </BaseLayout>
     </Router>
