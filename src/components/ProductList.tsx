@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import axios from "axios";
 import { ProductDto } from "../types/ProductDto";
 import {
   getProducts,
@@ -26,6 +27,99 @@ const initialForm: ProductDto = {
 };
 
 export default function ProductList() {
+  // Remove useNavigate, use local state for view switching
+  // ...existing code...
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+  // New state: show checkout info form after checkout
+  const [showCheckoutInfo, setShowCheckoutInfo] = useState(false);
+  // Cart state: [{ productId, quantity, stock, name }]
+  const [cart, setCart] = useState<{ productId: string, quantity: number, stock: number, name: string }[]>([]);
+  // Quantity input for Add to Cart
+  const [addQty, setAddQty] = useState(1);
+
+  // Increase quantity in cart
+  const handleIncreaseQty = async (item: { productId: string, quantity: number, stock: number, name: string }) => {
+    if (item.quantity >= item.stock) return;
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+      const res = await axios.post(
+        `${API_BASE_URL}/cart/add`,
+        {
+          productId: item.productId,
+          quantity: 1 // add one more
+        },
+        { withCredentials: true }
+      );
+      setCart(res.data);
+      console.log('Cart updated from backend:', res.data);
+    } catch (err) {
+      console.error('Failed to increase quantity:', err);
+    }
+  };
+
+  // Decrease quantity in cart
+  const handleDecreaseQty = async (item: { productId: string, quantity: number, stock: number, name: string }) => {
+    if (item.quantity <= 1) {
+      // Remove item from cart
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+        const res = await axios.post(
+          `${API_BASE_URL}/cart/remove`,
+          {
+            productId: item.productId
+          },
+          { withCredentials: true }
+        );
+        setCart(res.data);
+        console.log('Cart updated from backend:', res.data);
+      } catch (err) {
+        console.error('Failed to remove item:', err);
+      }
+    } else {
+      // Decrease quantity by 1
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+        const res = await axios.post(
+          `${API_BASE_URL}/cart/add`,
+          {
+            productId: item.productId,
+            quantity: -1 // decrease by one
+          },
+          { withCredentials: true }
+        );
+        setCart(res.data);
+        console.log('Cart updated from backend:', res.data);
+      } catch (err) {
+        console.error('Failed to decrease quantity:', err);
+      }
+    }
+  };
+
+  // Add to Cart handler
+  const handleAddToCart = async (product: ProductDto, quantity: number) => {
+    if (!product.id || typeof product.id !== 'string') return;
+    const availableStock = product.stock ?? 0;
+    const qtyToAdd = Math.max(1, Math.min(quantity, availableStock));
+    if (qtyToAdd < 1) {
+      console.log(`Cannot add ${product.name}: out of stock.`);
+      return;
+    }
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+      const res = await axios.post(
+        `${API_BASE_URL}/cart/add`,
+        {
+          productId: product.id,
+          quantity: qtyToAdd
+        },
+        { withCredentials: true }
+      );
+      setCart(res.data); // backend returns updated cart
+      console.log('Cart updated from backend:', res.data);
+    } catch (err) {
+      console.error('Failed to add to cart:', err);
+    }
+  };
   // Add showForm state to control add/edit form visibility
   const [showForm, setShowForm] = useState(false);
   // Category filter state (must be inside component)
@@ -514,11 +608,130 @@ export default function ProductList() {
                 ))}
               </div>
             </div>
-            <div className="bg-gradient-to-br from-green-900/80 to-green-700/60 p-6 rounded-2xl shadow-xl border-2 border-green-300 min-h-[200px]">
-              <h3 className="text-lg font-bold mb-2 text-green-100 tracking-wide">Description/Add to cart (future)</h3>
-              <div className="w-full h-40 bg-gray-900 border-2 border-green-400 rounded-xl flex items-center justify-center text-gray-400">
-                Product details and add-to-cart here
+            {/* Description window */}
+            <div className="bg-gradient-to-br from-green-900/80 to-green-700/60 p-6 rounded-2xl shadow-xl border-2 border-green-300 min-h-[120px] mb-4">
+              <h3 className="text-lg font-bold mb-2 text-green-100 tracking-wide">Description</h3>
+              <div className="w-full h-24 bg-gray-900 border-2 border-green-400 rounded-xl flex items-center justify-center text-gray-400">
+                Product details here
               </div>
+            </div>
+            {/* Add to cart window */}
+            <div className="bg-gradient-to-br from-yellow-900/80 to-yellow-700/60 p-6 rounded-2xl shadow-xl border-2 border-yellow-300 min-h-[120px]">
+              <h3 className="text-lg font-bold mb-2 text-yellow-100 tracking-wide">Add to cart</h3>
+              <div className="w-full h-24 bg-gray-900 border-2 border-yellow-400 rounded-xl flex flex-col items-center justify-center text-gray-400">
+                {/* Add to Cart button for selected product (if any) */}
+                {form && form.id ? (
+                  <div className="flex flex-col items-center gap-2 w-full">
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="addQty" className="text-yellow-200 font-semibold">Qty:</label>
+                      <input
+                        id="addQty"
+                        type="number"
+                        min={1}
+                        max={form.stock ?? 1}
+                        value={addQty}
+                        onChange={e => setAddQty(Math.max(1, Math.min(Number(e.target.value), form.stock ?? 1)))}
+                        className="w-16 px-2 py-1 rounded bg-gray-800 text-yellow-100 border border-yellow-400 text-center"
+                        disabled={form.stock === 0}
+                      />
+                      <span className="text-yellow-300 text-xs">/ {form.stock ?? 0} in stock</span>
+                    </div>
+                    <button
+                      className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-6 py-2 rounded-lg shadow transition-all"
+                      onClick={() => handleAddToCart(form, addQty)}
+                      disabled={form.stock === 0}
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                ) : (
+                  <span>Select a product to add to cart</span>
+                )}
+              </div>
+            </div>
+
+            {/* Cart List */}
+            <div className="mt-2 bg-gray-900/80 rounded-xl p-4 border border-gray-700">
+              <h3 className="text-lg font-bold text-yellow-200 mb-2">Cart</h3>
+              {/* If showCheckoutInfo, show checkout info form and hide cart/product list/images */}
+              {showCheckoutInfo ? (
+                <div className="bg-gray-800/90 p-8 rounded-2xl shadow-xl border border-gray-700 text-center">
+                  <h2 className="text-2xl font-bold text-green-300 mb-4">Checkout Information</h2>
+                  {/* Placeholder for contact/payment/address info form */}
+                  <div className="text-gray-200 mb-6">Please enter your contact, payment, and address information below.</div>
+                  {/* Example fields, not wired up yet */}
+                  <form className="flex flex-col gap-4 max-w-md mx-auto">
+                    <input type="text" placeholder="Full Name" className="px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600" />
+                    <input type="email" placeholder="Email Address" className="px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600" />
+                    <input type="text" placeholder="Shipping Address" className="px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600" />
+                    <input type="text" placeholder="Payment Details" className="px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600" />
+                    <button type="submit" className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow transition-all">Submit Order</button>
+                  </form>
+                </div>
+              ) : checkoutSuccess ? (
+                <div className="text-green-400 font-bold text-lg text-center py-6">Order placed! Thank you for your purchase.</div>
+              ) : cart.length === 0 ? (
+                <div className="text-gray-400">Cart is empty.</div>
+              ) : (
+                <>
+                  <ul className="divide-y divide-gray-700">
+                    {cart.map(item => (
+                      <li key={item.productId} className="py-2 flex justify-between items-center">
+                        <span className="text-white">{item.name}</span>
+                        <span className="text-gray-300">Qty: {item.quantity} / Stock: {item.stock}</span>
+                        <div className="flex gap-2 ml-4">
+                          <button
+                            className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded"
+                            onClick={() => handleDecreaseQty(item)}
+                            disabled={item.quantity <= 0}
+                          >-</button>
+                          <button
+                            className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded"
+                            onClick={() => handleIncreaseQty(item)}
+                            disabled={item.quantity >= item.stock}
+                          >+</button>
+                          <button
+                            className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
+                            onClick={async () => {
+                              try {
+                                const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+                                const res = await axios.post(
+                                  `${API_BASE_URL}/cart/remove`,
+                                  { productId: item.productId },
+                                  { withCredentials: true }
+                                );
+                                setCart(res.data);
+                                console.log('Cart updated from backend:', res.data);
+                              } catch (err) {
+                                console.error('Failed to remove item:', err);
+                              }
+                            }}
+                          >Remove</button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  {/* Single Checkout button for the whole cart */}
+                  <button
+                    className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow transition-all"
+                    onClick={async () => {
+                      try {
+                        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+                        const res = await axios.post(
+                          `${API_BASE_URL}/cart/reserve`,
+                          {},
+                          { withCredentials: true }
+                        );
+                        setCheckoutSuccess(true);
+                        setShowCheckoutInfo(true); // Show checkout info form
+                        console.log('Reservation response:', res.data);
+                      } catch (err) {
+                        console.error('Failed to reserve cart:', err);
+                      }
+                    }}
+                  >Checkout</button>
+                </>
+              )}
             </div>
           </div>
         </div>
