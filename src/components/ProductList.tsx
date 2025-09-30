@@ -698,8 +698,33 @@ export default function ProductList() {
                   {/* Single Checkout button for the whole cart */}
                   <button
                     className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow transition-all"
-                    onClick={() => {
-                      navigate("/product/checkout");
+                    onClick={async () => {
+                      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
+                      try {
+                        // 1. Reserve stock
+                        const reserveRes = await axios.post(
+                          `${API_BASE_URL}/cart/reserve`,
+                          {},
+                          { withCredentials: true }
+                        );
+                        if (reserveRes.status !== 200) {
+                          throw new Error("Stock reservation failed");
+                        }
+                        // 2. Proceed to checkout
+                        const checkoutRes = await axios.post(
+                          `${API_BASE_URL}/cart/checkout`,
+                          {},
+                          { withCredentials: true }
+                        );
+                        if (checkoutRes.status !== 200) {
+                          throw new Error("Checkout failed");
+                        }
+                        // 3. Navigate to checkout page for buyer info
+                        navigate("/product/checkout");
+                      } catch (err) {
+                        const error = err as any;
+                        alert(error?.response?.data?.message || error?.message || "Unknown error");
+                      }
                     }}
                   >Checkout</button>
                 </>
