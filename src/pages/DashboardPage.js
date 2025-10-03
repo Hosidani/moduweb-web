@@ -1,20 +1,26 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { getUser, updateUser, deleteUser } from '../api/user'; // API file is still named user.js, but endpoints inside are now plural
 import { useState, useEffect } from 'react';
 const DashboardPage = () => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     // Use user.id or user.userName depending on your backend
     const userId = user?.id;
     const [userInfo, setUserInfo] = useState(null);
     const [message, setMessage] = useState('');
     useEffect(() => {
+        if (!user) {
+            navigate('/login');
+            return;
+        }
         if (userId) {
             getUser(userId)
                 .then((info) => setUserInfo(info))
                 .catch((err) => setMessage('Failed to load user info: ' + err.message));
         }
-    }, [userId]);
+    }, [user, userId, navigate]);
     const handleUpdate = async (e) => {
         e.preventDefault();
         try {
