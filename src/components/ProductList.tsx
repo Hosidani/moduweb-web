@@ -701,28 +701,22 @@ export default function ProductList() {
                     onClick={async () => {
                       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL.trim();
                       try {
-                        // 1. Reserve stock
+                        console.debug("[Cart] Reserving stock before checkout...");
                         const reserveRes = await axios.post(
                           `${API_BASE_URL}/cart/reserve`,
                           {},
                           { withCredentials: true }
                         );
+                        console.debug("[Cart] Reserve response:", reserveRes);
                         if (reserveRes.status !== 200) {
+                          console.error("[Cart] Stock reservation failed", reserveRes);
                           throw new Error("Stock reservation failed");
                         }
-                        // 2. Proceed to checkout
-                        const checkoutRes = await axios.post(
-                          `${API_BASE_URL}/cart/checkout`,
-                          {},
-                          { withCredentials: true }
-                        );
-                        if (checkoutRes.status !== 200) {
-                          throw new Error("Checkout failed");
-                        }
-                        // 3. Navigate to checkout page for buyer info
+                        console.debug("[Cart] Stock reserved successfully, navigating to checkout.");
                         navigate("/product/checkout");
                       } catch (err) {
                         const error = err as any;
+                        console.error("[Cart] Error reserving stock:", error);
                         alert(error?.response?.data?.message || error?.message || "Unknown error");
                       }
                     }}
