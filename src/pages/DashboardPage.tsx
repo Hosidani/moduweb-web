@@ -1,22 +1,28 @@
 import { useAuth } from '../context/AuthContext';
-import { getUser, updateUser, deleteUser } from '../api/user';
+import { useNavigate } from 'react-router-dom';
+import { getUser, updateUser, deleteUser } from '../api/user'; // API file is still named user.js, but endpoints inside are now plural
 import { useState, useEffect } from 'react';
-import { User } from '../api/user';
+import { User } from '../api/user'; // API file is still named user.js, but endpoints inside are now plural
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   // Use user.id or user.userName depending on your backend
   const userId = user?.id;
   const [userInfo, setUserInfo] = useState<User | null>(null);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     if (userId) {
       getUser(userId)
-  .then((info) => setUserInfo(info))
+        .then((info) => setUserInfo(info))
         .catch((err) => setMessage('Failed to load user info: ' + err.message));
     }
-  }, [userId]);
+  }, [user, userId, navigate]);
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

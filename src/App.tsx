@@ -8,6 +8,8 @@ import BookingPage from "./pages/BookingPage";
 import CreateUserPage from "./pages/CreateUserPage";
 import BaseLayout from "./components/BaseLayout";
 
+console.log('API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
+
 function App() {
   return (
     <Router>

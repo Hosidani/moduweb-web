@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:prodapi": "set VITE_API_BASE_URL=https://moduwebapi-fccvbzccghd2h8am.swedencentral-01.azurewebsites.net/api && vite",
+    "dev:localapi": "set VITE_API_BASE_URL=https://localhost:5083/api && vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -6,7 +6,6 @@ import { Link } from 'react-router-dom';
 
 const BaseLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  console.log('Current user in BaseLayout:', user, JSON.stringify(user));
   const welcomeText = user && user.userName ? `Welcome ${user.userName}` : 'Welcome guest';
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -16,8 +15,8 @@ const BaseLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <nav style={{ display: 'flex', justifyContent: 'flex-start', gap: '1rem' }}>
           <Link to="/">Homepage</Link>
           <Link to="/login">Login</Link>
-          <Link to="/dashboard">Dashboard</Link>
-          <Link to="/booking">Booking</Link>
+          {user && <Link to="/dashboard">Dashboard</Link>}
+          {user && <Link to="/booking">Booking</Link>}
           <Link to="/about">About Us</Link>
         </nav>
       </header>

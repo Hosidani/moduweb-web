@@ -28,7 +28,7 @@ const LoginPage = () => {
     // Helper to fetch user by username (since your backend expects id, you need a getUserByUsername API)
     async function getUserByUsername(username) {
         // Fetch all users and find by username (inefficient, but works if no direct endpoint)
-        const { getUsers } = await import('../api/user');
+        const { getUsers } = await import('../api/user'); // API file is still named user.js, but endpoints inside are now plural
         const users = await getUsers();
         return users.find((u) => u.userName === username);
     }
