@@ -24,7 +24,7 @@ export default function ProductList() {
     // Remove useNavigate, use local state for view switching
     // ...existing code...
     // ...existing code...
-    // Cart state: [{ productId, quantity, stock, name }]
+    // Cart state: [{ productId, quantity, stock, name, price }]
     const [cart, setCart] = useState([]);
     // Quantity input for Add to Cart
     const [addQty, setAddQty] = useState(1);
@@ -93,8 +93,13 @@ export default function ProductList() {
                 productId: product.id,
                 quantity: qtyToAdd
             }, { withCredentials: true });
-            setCart(res.data); // backend returns updated cart
-            console.log('Cart updated from backend:', res.data);
+            // Enrich cart items with price from products
+            const updatedCart = res.data.map(item => {
+                const prod = products.find(p => p.id === item.productId);
+                return { ...item, price: prod?.price ?? 0, name: prod?.name ?? item.name };
+            });
+            setCart(updatedCart);
+            console.log('Cart updated from backend:', updatedCart);
         }
         catch (err) {
             console.error('Failed to add to cart:', err);
@@ -355,7 +360,12 @@ export default function ProductList() {
                                                                 throw new Error("Stock reservation failed");
                                                             }
                                                             console.debug("[Cart] Stock reserved successfully, navigating to checkout.");
-                                                            navigate("/product/checkout");
+                                                            // Enrich cart with price before navigating
+                                                            const cartWithPrice = cart.map(item => {
+                                                                const prod = products.find(p => p.id === item.productId);
+                                                                return { ...item, price: prod?.price ?? 0, name: prod?.name ?? item.name };
+                                                            });
+                                                            navigate("/product/checkout", { state: { cart: cartWithPrice } });
                                                         }
                                                         catch (err) {
                                                             const error = err;

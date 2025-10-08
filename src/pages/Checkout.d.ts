@@ -4,6 +4,7 @@ export interface CartItem {
     name: string;
     quantity: number;
     stock: number;
+    price: number;
 }
 export interface CheckoutPageProps {
     cart: CartItem[];

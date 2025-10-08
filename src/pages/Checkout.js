@@ -1,7 +1,10 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
-const Checkout = ({ cart, onSubmit }) => {
+const Checkout = ({ onSubmit }) => {
+    const location = useLocation();
+    const [cart] = useState(location.state?.cart || []);
     const [form, setForm] = useState({
         name: "",
         email: "",
@@ -12,7 +15,6 @@ const Checkout = ({ cart, onSubmit }) => {
     const [loading, setLoading] = useState(false);
     const [totalAmount, setTotalAmount] = useState(null);
     const [orderId, setOrderId] = useState(null);
-    const [orderConfirmed, setOrderConfirmed] = useState(false);
     // Kör checkout automatiskt när sidan visas
     useEffect(() => {
         const doCheckout = async () => {
@@ -28,7 +30,7 @@ const Checkout = ({ cart, onSubmit }) => {
                 }
                 setTotalAmount(checkoutRes.data?.totalAmount ?? null);
                 setOrderId(checkoutRes.data?.orderId ?? null);
-                setOrderConfirmed(true);
+                // setOrderConfirmed(true); // Flytta till betalningsformulär
             }
             catch (err) {
                 console.error("[Checkout] Error:", err);
@@ -52,8 +54,10 @@ const Checkout = ({ cart, onSubmit }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         // Här kan du lägga logik för betalning, men checkout är redan gjord
+        console.debug("[Checkout] Payment submitted", form, cart);
+        // Integrera betalningsprovider här
         onSubmit(form);
     };
-    return (_jsx("div", { className: "min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 py-10 px-4 flex justify-center", children: _jsxs("div", { className: "max-w-2xl w-full bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700", children: [_jsx("h1", { className: "text-3xl font-bold text-white mb-6", children: "Checkout" }), _jsxs("div", { className: "mb-6 text-gray-200", children: [_jsx("h2", { className: "text-xl font-semibold mb-2", children: "Order List" }), _jsxs("table", { className: "w-full text-left mb-2", children: [_jsx("thead", { children: _jsxs("tr", { className: "bg-gray-700 text-gray-200", children: [_jsx("th", { className: "px-2 py-1", children: "Product" }), _jsx("th", { className: "px-2 py-1", children: "Quantity" }), _jsx("th", { className: "px-2 py-1", children: "Price" }), _jsx("th", { className: "px-2 py-1", children: "Subtotal" })] }) }), _jsx("tbody", { children: cart.map((item) => (_jsxs("tr", { className: "border-b border-gray-700", children: [_jsx("td", { className: "px-2 py-1", children: item.name }), _jsx("td", { className: "px-2 py-1", children: item.quantity }), _jsxs("td", { className: "px-2 py-1", children: ["$", item.stock] }), _jsxs("td", { className: "px-2 py-1", children: ["$", item.quantity * item.stock] })] }, item.productId))) })] }), orderId && (_jsxs("div", { className: "text-gray-400 mt-1 text-sm", children: ["Order ID: ", orderId] })), totalAmount !== null && (_jsxs("div", { className: "font-bold text-green-400 mt-2 text-lg", children: ["Amount to pay: $", totalAmount] }))] }), error && !orderId && _jsx("div", { className: "mb-4 text-red-400 font-semibold", children: error }), orderConfirmed ? (_jsxs("div", { className: "bg-green-900/80 border border-green-400 rounded-xl p-6 text-green-200 text-center font-bold text-xl mt-4", children: ["Order confirmed! Thank you for your purchase.", _jsx("br", {}), "Order ID: ", orderId, _jsx("br", {}), "Amount to pay: $", totalAmount] })) : (_jsxs("form", { onSubmit: handleSubmit, className: "space-y-4", children: [_jsx("input", { type: "text", name: "name", placeholder: "Full Name", value: form.name, onChange: handleChange, required: true, className: "w-full px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none", disabled: loading || orderConfirmed }), _jsx("input", { type: "email", name: "email", placeholder: "Email", value: form.email, onChange: handleChange, required: true, className: "w-full px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none", disabled: loading || orderConfirmed }), _jsx("textarea", { name: "address", placeholder: "Shipping Address", value: form.address, onChange: handleChange, required: true, className: "w-full px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none", disabled: loading || orderConfirmed }), _jsx("input", { type: "tel", name: "phone", placeholder: "Phone Number", value: form.phone, onChange: handleChange, className: "w-full px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none", disabled: loading || orderConfirmed }), _jsx("button", { type: "submit", className: "w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold shadow-md", disabled: loading || orderConfirmed, children: loading ? "Processing..." : "Proceed to Payment" })] }))] }) }));
+    return (_jsx("div", { className: "min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 py-10 px-4 flex justify-center", children: _jsxs("div", { className: "max-w-2xl w-full bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700", children: [_jsx("h1", { className: "text-3xl font-bold text-white mb-6", children: "Checkout" }), _jsxs("div", { className: "mb-6 text-gray-200", children: [_jsx("h2", { className: "text-xl font-semibold mb-2", children: "Order List" }), _jsxs("table", { className: "w-full text-left mb-2", children: [_jsx("thead", { children: _jsxs("tr", { className: "bg-gray-700 text-gray-200", children: [_jsx("th", { className: "px-2 py-1", children: "Product" }), _jsx("th", { className: "px-2 py-1", children: "Quantity" }), _jsx("th", { className: "px-2 py-1", children: "Price" }), _jsx("th", { className: "px-2 py-1", children: "Subtotal" })] }) }), _jsx("tbody", { children: cart.map((item) => (_jsxs("tr", { className: "border-b border-gray-700", children: [_jsx("td", { className: "px-2 py-1", children: item.name }), _jsx("td", { className: "px-2 py-1", children: item.quantity }), _jsxs("td", { className: "px-2 py-1", children: ["$", item.price] }), _jsxs("td", { className: "px-2 py-1", children: ["$", item.quantity * item.price] })] }, item.productId))) })] }), orderId && (_jsxs("div", { className: "text-gray-400 mt-1 text-sm", children: ["Order nummer: ", orderId] })), totalAmount !== null && (_jsxs("div", { className: "font-bold text-green-400 mt-2 text-lg", children: ["Amount to pay: $", totalAmount] }))] }), error && !orderId && _jsx("div", { className: "mb-4 text-red-400 font-semibold", children: error }), _jsxs("form", { onSubmit: handleSubmit, className: "space-y-4", children: [_jsx("input", { type: "text", name: "name", placeholder: "Full Name", value: form.name, onChange: handleChange, required: true, className: "w-full px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none", disabled: loading }), _jsx("input", { type: "email", name: "email", placeholder: "Email", value: form.email, onChange: handleChange, required: true, className: "w-full px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none", disabled: loading }), _jsx("textarea", { name: "address", placeholder: "Shipping Address", value: form.address, onChange: handleChange, required: true, className: "w-full px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none", disabled: loading }), _jsx("input", { type: "tel", name: "phone", placeholder: "Phone Number", value: form.phone, onChange: handleChange, className: "w-full px-4 py-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none", disabled: loading }), _jsx("button", { type: "submit", className: "w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold shadow-md", disabled: loading, children: loading ? "Processing..." : "Proceed to Payment" })] })] }) }));
 };
 export default Checkout;
