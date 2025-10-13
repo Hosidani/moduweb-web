@@ -55,8 +55,11 @@ const DashboardPage = () => {
         <div className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg text-black">
           Besökare: Kommer snart statistik här.
         </div>
-        <div className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg text-black">
-          Bokningar: Kommer snart statistik här.
+        <div
+          className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg text-black cursor-pointer hover:bg-blue-50"
+          onClick={() => navigate('/dashboard/bookings')}
+        >
+          <span className="font-bold">Bokningar</span>
         </div>
         <div className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg text-black">
           Köp (sålda varor): Kommer snart statistik här.

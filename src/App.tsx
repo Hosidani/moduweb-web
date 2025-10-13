@@ -4,6 +4,7 @@ import AboutPage from "./pages/AboutPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import BookingManagerPage from "./pages/BookingManagerPage";
 import BookingPage from "./pages/BookingPage";
 import CreateUserPage from "./pages/CreateUserPage";
 import BaseLayout from "./components/BaseLayout";
@@ -21,6 +22,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/create-user" element={<CreateUserPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/dashboard/bookings" element={<BookingManagerPage />} />
           <Route path="/booking" element={<BookingPage />} />
         </Routes>
       </BaseLayout>
