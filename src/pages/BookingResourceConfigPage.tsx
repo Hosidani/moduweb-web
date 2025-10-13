@@ -7,6 +7,7 @@ const defaultConfig = {
   capacity: 2,
   daysOfWeek: Array.from({ length: 7 }, (_, i) => ({
     day: i + 1,
+    isWorking: true,
     startTime: '08:00',
     endTime: '17:00',
   })),
@@ -68,6 +69,15 @@ const BookingResourceConfigPage = () => {
     }));
   }
 
+  function handleDayWorkingChange(idx: number, checked: boolean) {
+    setConfig((prev) => ({
+      ...prev,
+      daysOfWeek: prev.daysOfWeek.map((d, i) =>
+        i === idx ? { ...d, isWorking: checked } : d
+      ),
+    }));
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSaving(true);
@@ -93,7 +103,7 @@ const BookingResourceConfigPage = () => {
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto bg-white rounded shadow">
+  <div className="p-9 max-w-5xl mx-auto bg-white rounded shadow">
       <h2 className="text-2xl font-bold mb-4 text-black">Configure Booking Resource</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -126,15 +136,40 @@ const BookingResourceConfigPage = () => {
         </div>
         <div>
           <label className="block font-semibold mb-1 text-black">Days of Week</label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="flex flex-col gap-2">
             {config.daysOfWeek.map((d, idx) => {
               const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
               return (
-                <div key={d.day} className="flex items-center gap-2 border p-2 rounded">
-                  <span className="w-24 font-bold text-black">{dayNames[idx]}</span>
-                  <input type="time" className="border px-2 py-1 rounded" value={d.startTime} onChange={e => handleDayChange(idx, 'startTime', e.target.value)} />
+                <div
+                  key={d.day}
+                  className="w-full min-h-[48px] flex flex-row flex-wrap items-center gap-3 border p-2 rounded bg-white shadow-sm overflow-x-auto"
+                  style={{ boxSizing: 'border-box' }}
+                >
+                  <span className="w-24 min-w-[80px] font-bold text-black">{dayNames[idx]}</span>
+                  <div className="flex items-center gap-1 min-w-[90px]">
+                    <input
+                      type="checkbox"
+                      checked={d.isWorking !== false}
+                      onChange={e => handleDayWorkingChange(idx, e.target.checked)}
+                      id={`working-day-${idx}`}
+                    />
+                    <label htmlFor={`working-day-${idx}`} className="text-black select-none cursor-pointer text-sm">Working day</label>
+                  </div>
+                  <input
+                    type="time"
+                    className="border px-2 py-1 rounded w-[90px]"
+                    value={d.startTime}
+                    onChange={e => handleDayChange(idx, 'startTime', e.target.value)}
+                    disabled={d.isWorking === false}
+                  />
                   <span className="text-black">-</span>
-                  <input type="time" className="border px-2 py-1 rounded" value={d.endTime} onChange={e => handleDayChange(idx, 'endTime', e.target.value)} />
+                  <input
+                    type="time"
+                    className="border px-2 py-1 rounded w-[90px]"
+                    value={d.endTime}
+                    onChange={e => handleDayChange(idx, 'endTime', e.target.value)}
+                    disabled={d.isWorking === false}
+                  />
                 </div>
               );
             })}
