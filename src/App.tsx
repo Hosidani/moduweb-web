@@ -8,6 +8,7 @@ import BookingManagerPage from "./pages/BookingManagerPage";
 import BookingPage from "./pages/BookingPage";
 import CreateUserPage from "./pages/CreateUserPage";
 import BaseLayout from "./components/BaseLayout";
+import BookingResourceConfigPage from './pages/BookingResourceConfigPage';
 
 console.log('API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
 
@@ -24,6 +25,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/dashboard/bookings" element={<BookingManagerPage />} />
           <Route path="/booking" element={<BookingPage />} />
+          <Route path="/dashboard/bookings/configure/:id" element={<BookingResourceConfigPage />} />
         </Routes>
       </BaseLayout>
     </Router>
