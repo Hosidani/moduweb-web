@@ -110,16 +110,6 @@ const BookingResourceConfigPage = () => {
           <label className="block font-semibold mb-1 text-black">Resource Name</label>
           <input type="text" className="border px-3 py-2 rounded w-full" value={resourceName} onChange={e => setResourceName(e.target.value)} required />
         </div>
-        <div className="flex gap-4">
-          <div>
-            <label className="block font-semibold mb-1 text-black">Start Offset</label>
-            <input type="number" className="border px-3 py-2 rounded w-full" value={offsetForResource.startOffset} onChange={e => setOffsetForResource({ ...offsetForResource, startOffset: Number(e.target.value) })} />
-          </div>
-          <div>
-            <label className="block font-semibold mb-1 text-black">End Offset</label>
-            <input type="number" className="border px-3 py-2 rounded w-full" value={offsetForResource.endOffset} onChange={e => setOffsetForResource({ ...offsetForResource, endOffset: Number(e.target.value) })} />
-          </div>
-        </div>
         <div>
           <label className="block font-semibold mb-1 text-black">Timezone</label>
           <input type="text" className="border px-3 py-2 rounded w-full" value={config.timezone} onChange={e => handleConfigChange('timezone', e.target.value)} required />
