@@ -1,10 +1,35 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+
+// NavButton component using ModuWeb Design System
+const NavButton: React.FC<{ 
+  children: React.ReactNode; 
+  to?: string; 
+  selected?: boolean; 
+  onClick?: () => void;
+}> = ({ children, to, selected, onClick }) => {
+  const className = `${selected ? 'nav-link-active' : 'nav-link'} whitespace-nowrap`;
+
+  if (to) {
+    return (
+      <Link to={to} className={className}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <button onClick={onClick} className={className}>
+      {children}
+    </button>
+  );
+};
 
 const BaseLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     setUser(null);
@@ -12,79 +37,146 @@ const BaseLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     navigate('/login');
   };
 
-
+  // Check if current route matches
+  const isCurrentRoute = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Professional Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 w-full">
-            {/* Logo */}
-            <div className="flex items-center mr-8">
-              <Link to="/" className="text-2xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
-                ModuWeb
-              </Link>
+    <div className="min-h-screen bg-bg text-text-primary">
+      {/* Top navbar */}
+      <header className="sticky top-0 z-40 bg-bg-card border-b border-border shadow-soft">
+        <div className="page-container !py-0">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-6">
+              <div className="text-2xl font-bold text-text-primary">
+                <Link to="/" className="hover:text-brand transition-colors">ModuWeb</Link>
+              </div>
+
+              <nav className="hidden md:flex items-center gap-1">
+                <NavButton to="/" selected={isCurrentRoute('/')}>
+                  Homepage
+                </NavButton>
+                {user && (
+                  <>
+                    <NavButton to="/dashboard" selected={isCurrentRoute('/dashboard')}>
+                      Dashboard
+                    </NavButton>
+                    <NavButton to="/dashboard/bookings" selected={location.pathname.includes('/bookings')}>
+                      Bookings
+                    </NavButton>
+                    <NavButton to="/webshop" selected={isCurrentRoute('/webshop')}>
+                      Webshop
+                    </NavButton>
+                  </>
+                )}
+                <NavButton to="/about" selected={isCurrentRoute('/about')}>
+                  About
+                </NavButton>
+              </nav>
             </div>
 
-            {/* Main Navigation - Centered */}
-            <nav className="hidden md:flex items-center space-x-4 flex-1 justify-center">
-              {!user && (
-                <Link to="/login" className="text-gray-700 hover:text-blue-600 transition-colors font-medium">
-                  Login
-                </Link>
-              )}
-              {user && (
+            <div className="flex items-center gap-4">
+              {user ? (
                 <>
-                  <Link to="/" className="text-gray-700 hover:text-blue-600 transition-colors font-medium">
-                    Homepage
-                  </Link>
-                  <Link to="/dashboard" className="text-gray-700 hover:text-blue-600 transition-colors font-medium">
-                    Dashboard
-                  </Link>
-                  <Link to="/dashboard/bookings" className="text-gray-700 hover:text-blue-600 transition-colors font-medium">
-                    Bookings
-                  </Link>
-                </>
-              )}
-              <Link to="/about" className="text-gray-700 hover:text-blue-600 transition-colors font-medium">
-                About
-              </Link>
-            </nav>
-
-            {/* User Menu - Right aligned */}
-            <div className="flex items-center space-x-4 flex-shrink-0 ml-8">
-              {user && (
-                <>
-                  <span className="text-gray-600 font-medium">Welcome, {user.userName}</span>
-                  <button
+                  <div className="text-sm text-text-secondary hidden sm:block">
+                    Welcome, {user.userName}
+                  </div>
+                  <button 
                     onClick={handleLogout}
-                    className="text-gray-600 hover:text-red-600 transition-colors font-medium"
+                    className="btn-secondary text-sm"
                   >
                     Logout
                   </button>
                 </>
+              ) : (
+                <NavButton to="/login">Login</NavButton>
               )}
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1">
-        {children}
-      </main>
+      <main className="page-container">
+        <div className="grid grid-cols-12 gap-8">
+          {/* Left column: sidebar for app pages - only show when user is logged in */}
+          {user && (
+            <aside className="col-span-12 md:col-span-3">
+              <div className="sticky top-24">
+                <div className="card p-4 space-y-4 fade-in">
+                  <div className="text-sm font-semibold text-text-secondary">App</div>
+                  <div className="flex flex-col gap-1">
+                    <Link
+                      to="/dashboard"
+                      className={`${
+                        isCurrentRoute('/dashboard') 
+                          ? 'sidebar-link-active' 
+                          : 'sidebar-link'
+                      }`}
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/dashboard/bookings"
+                      className={`${
+                        location.pathname.includes('/bookings')
+                          ? 'sidebar-link-active' 
+                          : 'sidebar-link'
+                      }`}
+                    >
+                      Booking Manager
+                    </Link>
+                    <Link
+                      to="/webshop"
+                      className={`${
+                        isCurrentRoute('/webshop')
+                          ? 'sidebar-link-active' 
+                          : 'sidebar-link'
+                      }`}
+                    >
+                      Webshop
+                    </Link>
+                    <Link
+                      to="/containers"
+                      className={`${
+                        isCurrentRoute('/containers')
+                          ? 'sidebar-link-active' 
+                          : 'sidebar-link'
+                      }`}
+                    >
+                      Containers & Config
+                    </Link>
+                    <Link
+                      to="/account/settings"
+                      className={`${
+                        isCurrentRoute('/account/settings')
+                          ? 'sidebar-link-active' 
+                          : 'sidebar-link'
+                      }`}
+                    >
+                      Account Settings
+                    </Link>
+                  </div>
 
-      {/* Professional Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-center">
-            <Link to="/privacy" className="text-gray-600 hover:text-blue-600 transition-colors">
-              Privacy Policy
-            </Link>
-          </div>
+                  <div className="pt-3 border-t border-border">
+                    <div className="text-xs text-text-secondary">Product</div>
+                    <div className="text-sm font-medium text-text-primary mt-2">ModuWeb Platform</div>
+                  </div>
+                </div>
+
+                <div className="mt-4 text-sm text-text-secondary">
+                  💡 Tips: Each customer runs in their own container with separate DB & YAML config.
+                </div>
+              </div>
+            </aside>
+          )}
+
+          {/* Main content area */}
+          <section className={user ? "col-span-12 md:col-span-9" : "col-span-12"}>
+            <div className="slide-up">
+              {children}
+            </div>
+          </section>
         </div>
-      </footer>
+      </main>
     </div>
   );
 };

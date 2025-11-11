@@ -1,14 +1,35 @@
 import { jsx as _jsx, Fragment as _Fragment, jsxs as _jsxs } from "react/jsx-runtime";
 import { useAuth } from '../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+// NavButton component using ModuWeb Design System
+const NavButton = ({ children, to, selected, onClick }) => {
+    const className = `${selected ? 'nav-link-active' : 'nav-link'} whitespace-nowrap`;
+    if (to) {
+        return (_jsx(Link, { to: to, className: className, children: children }));
+    }
+    return (_jsx("button", { onClick: onClick, className: className, children: children }));
+};
 const BaseLayout = ({ children }) => {
     const { user, setUser } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const handleLogout = () => {
         setUser(null);
         localStorage.removeItem('user');
         navigate('/login');
     };
-    return (_jsxs("div", { className: "min-h-screen bg-gray-50 flex flex-col", children: [_jsx("header", { className: "bg-white shadow-sm border-b border-gray-200", children: _jsx("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", children: _jsxs("div", { className: "flex items-center justify-between h-16 w-full", children: [_jsx("div", { className: "flex items-center mr-8", children: _jsx(Link, { to: "/", className: "text-2xl font-bold text-gray-900 hover:text-blue-600 transition-colors", children: "ModuWeb" }) }), _jsxs("nav", { className: "hidden md:flex items-center space-x-4 flex-1 justify-center", children: [!user && (_jsx(Link, { to: "/login", className: "text-gray-700 hover:text-blue-600 transition-colors font-medium", children: "Login" })), user && (_jsxs(_Fragment, { children: [_jsx(Link, { to: "/", className: "text-gray-700 hover:text-blue-600 transition-colors font-medium", children: "Homepage" }), _jsx(Link, { to: "/dashboard", className: "text-gray-700 hover:text-blue-600 transition-colors font-medium", children: "Dashboard" }), _jsx(Link, { to: "/dashboard/bookings", className: "text-gray-700 hover:text-blue-600 transition-colors font-medium", children: "Bookings" })] })), _jsx(Link, { to: "/about", className: "text-gray-700 hover:text-blue-600 transition-colors font-medium", children: "About" })] }), _jsx("div", { className: "flex items-center space-x-4 flex-shrink-0 ml-8", children: user && (_jsxs(_Fragment, { children: [_jsxs("span", { className: "text-gray-600 font-medium", children: ["Welcome, ", user.userName] }), _jsx("button", { onClick: handleLogout, className: "text-gray-600 hover:text-red-600 transition-colors font-medium", children: "Logout" })] })) })] }) }) }), _jsx("main", { className: "flex-1", children: children }), _jsx("footer", { className: "bg-white border-t border-gray-200 mt-auto", children: _jsx("div", { className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4", children: _jsx("div", { className: "flex justify-center", children: _jsx(Link, { to: "/privacy", className: "text-gray-600 hover:text-blue-600 transition-colors", children: "Privacy Policy" }) }) }) })] }));
+    // Check if current route matches
+    const isCurrentRoute = (path) => location.pathname === path;
+    return (_jsxs("div", { className: "min-h-screen bg-bg text-text-primary", children: [_jsx("header", { className: "sticky top-0 z-40 bg-bg-card border-b border-border shadow-soft", children: _jsx("div", { className: "page-container !py-0", children: _jsxs("div", { className: "flex items-center justify-between h-16", children: [_jsxs("div", { className: "flex items-center gap-6", children: [_jsx("div", { className: "text-2xl font-bold text-text-primary", children: _jsx(Link, { to: "/", className: "hover:text-brand transition-colors", children: "ModuWeb" }) }), _jsxs("nav", { className: "hidden md:flex items-center gap-1", children: [_jsx(NavButton, { to: "/", selected: isCurrentRoute('/'), children: "Homepage" }), user && (_jsxs(_Fragment, { children: [_jsx(NavButton, { to: "/dashboard", selected: isCurrentRoute('/dashboard'), children: "Dashboard" }), _jsx(NavButton, { to: "/dashboard/bookings", selected: location.pathname.includes('/bookings'), children: "Bookings" }), _jsx(NavButton, { to: "/webshop", selected: isCurrentRoute('/webshop'), children: "Webshop" })] })), _jsx(NavButton, { to: "/about", selected: isCurrentRoute('/about'), children: "About" })] })] }), _jsx("div", { className: "flex items-center gap-4", children: user ? (_jsxs(_Fragment, { children: [_jsxs("div", { className: "text-sm text-text-secondary hidden sm:block", children: ["Welcome, ", user.userName] }), _jsx("button", { onClick: handleLogout, className: "btn-secondary text-sm", children: "Logout" })] })) : (_jsx(NavButton, { to: "/login", children: "Login" })) })] }) }) }), _jsx("main", { className: "page-container", children: _jsxs("div", { className: "grid grid-cols-12 gap-8", children: [user && (_jsx("aside", { className: "col-span-12 md:col-span-3", children: _jsxs("div", { className: "sticky top-24", children: [_jsxs("div", { className: "card p-4 space-y-4 fade-in", children: [_jsx("div", { className: "text-sm font-semibold text-text-secondary", children: "App" }), _jsxs("div", { className: "flex flex-col gap-1", children: [_jsx(Link, { to: "/dashboard", className: `${isCurrentRoute('/dashboard')
+                                                            ? 'sidebar-link-active'
+                                                            : 'sidebar-link'}`, children: "Dashboard" }), _jsx(Link, { to: "/dashboard/bookings", className: `${location.pathname.includes('/bookings')
+                                                            ? 'sidebar-link-active'
+                                                            : 'sidebar-link'}`, children: "Booking Manager" }), _jsx(Link, { to: "/webshop", className: `${isCurrentRoute('/webshop')
+                                                            ? 'sidebar-link-active'
+                                                            : 'sidebar-link'}`, children: "Webshop" }), _jsx(Link, { to: "/containers", className: `${isCurrentRoute('/containers')
+                                                            ? 'sidebar-link-active'
+                                                            : 'sidebar-link'}`, children: "Containers & Config" }), _jsx(Link, { to: "/account/settings", className: `${isCurrentRoute('/account/settings')
+                                                            ? 'sidebar-link-active'
+                                                            : 'sidebar-link'}`, children: "Account Settings" })] }), _jsxs("div", { className: "pt-3 border-t border-border", children: [_jsx("div", { className: "text-xs text-text-secondary", children: "Product" }), _jsx("div", { className: "text-sm font-medium text-text-primary mt-2", children: "ModuWeb Platform" })] })] }), _jsx("div", { className: "mt-4 text-sm text-text-secondary", children: "\uD83D\uDCA1 Tips: Each customer runs in their own container with separate DB & YAML config." })] }) })), _jsx("section", { className: user ? "col-span-12 md:col-span-9" : "col-span-12", children: _jsx("div", { className: "slide-up", children: children }) })] }) })] }));
 };
 export default BaseLayout;

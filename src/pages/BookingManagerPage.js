@@ -1,6 +1,8 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 const BookingManagerPage = () => {
+    const navigate = useNavigate();
     const [showForm, setShowForm] = useState(false);
     const [resourceName, setResourceName] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -98,25 +100,25 @@ const BookingManagerPage = () => {
             setSubmitting(false);
         }
     }
-    return (_jsxs("div", { className: "p-6 space-y-4 bg-gray-100 min-h-screen", children: [_jsx("h2", { className: "text-2xl font-bold mb-4 text-black", children: "Booking Manager" }), _jsx("button", { className: "bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-700", onClick: handleOpenForm, children: "Add booking resource" }), showForm && (_jsx("div", { className: "fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50", children: _jsxs("div", { className: "bg-white rounded shadow-lg p-6 w-full max-w-sm", children: [_jsx("h3", { className: "text-lg font-bold mb-4", children: "Add Booking Resource" }), _jsxs("form", { onSubmit: handleSubmit, className: "space-y-4", children: [_jsx("input", { type: "text", className: "border px-3 py-2 rounded w-full", placeholder: "Resource name", value: resourceName, onChange: e => setResourceName(e.target.value), required: true, disabled: submitting }), _jsxs("div", { className: "flex gap-2 justify-end", children: [_jsx("button", { type: "button", className: "px-3 py-2 rounded bg-gray-300 hover:bg-gray-400", onClick: handleCloseForm, disabled: submitting, children: "Cancel" }), _jsx("button", { type: "submit", className: "px-3 py-2 rounded bg-green-600 text-white font-bold hover:bg-green-700", disabled: submitting || !resourceName.trim(), children: submitting ? 'Adding...' : 'Add' })] })] })] }) })), _jsxs("div", { className: "bg-white rounded shadow p-6 mt-4 border border-gray-200", children: [_jsx("h3", { className: "font-bold mb-4 text-black text-lg", children: "All Booking Resources" }), loadingBookings ? (_jsx("div", { className: "text-gray-500", children: "Loading..." })) : errorBookings ? (_jsx("div", { className: "text-red-600", children: errorBookings })) : bookings.length === 0 ? (_jsx("div", { className: "text-gray-500", children: "No bookings found." })) : (_jsx("ul", { className: "divide-y divide-gray-100", children: bookings
-                            .filter((b) => {
-                            try {
-                                const content = typeof b.content === 'string' ? JSON.parse(b.content) : b.content;
-                                return content.bookingResourceName !== undefined;
-                            }
-                            catch {
-                                return false;
-                            }
-                        })
-                            .map((b) => {
-                            let name = '';
-                            let id = b.id || b.Id;
-                            try {
-                                const content = typeof b.content === 'string' ? JSON.parse(b.content) : b.content;
-                                name = content.bookingResourceName || '';
-                            }
-                            catch { }
-                            return (_jsxs("li", { className: "py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2", children: [_jsxs("div", { className: "flex flex-col md:flex-row md:items-center gap-2", children: [_jsx("span", { className: "text-black font-medium text-base", children: name }), _jsx("span", { className: "text-xs text-gray-400", children: id })] }), _jsxs("div", { className: "flex gap-2 mt-2 md:mt-0", children: [_jsx("a", { href: `/dashboard/bookings/configure/${id}`, className: "px-3 py-1 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 text-sm transition", title: "Configure", children: "Configure" }), _jsx("button", { className: "px-3 py-1 rounded bg-red-500 text-white font-semibold hover:bg-red-700 text-sm transition disabled:opacity-60", onClick: () => handleDeleteBooking(id), disabled: deletingId === id, title: "Delete", children: deletingId === id ? 'Deleting...' : 'Delete' })] })] }, id));
-                        }) }))] })] }));
+    return (_jsxs("div", { className: "content-wrapper", children: [_jsxs("div", { className: "flex items-center justify-between", children: [_jsx("h2", { className: "text-2xl font-semibold text-text-primary", children: "Booking Manager" }), _jsxs("div", { className: "flex gap-3", children: [_jsx("button", { onClick: () => navigate('/dashboard'), className: "btn-secondary", children: "Back" }), _jsx("button", { onClick: handleOpenForm, className: "btn-success", children: "Add booking resource" })] })] }), showForm && (_jsx("div", { className: "fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 fade-in", children: _jsxs("div", { className: "card p-6 w-full max-w-sm slide-up", children: [_jsx("h3", { className: "text-lg font-semibold text-text-primary mb-4", children: "Add Booking Resource" }), _jsxs("form", { onSubmit: handleSubmit, className: "space-y-4", children: [_jsxs("div", { className: "form-group", children: [_jsx("label", { className: "form-label", children: "Resource name" }), _jsx("input", { type: "text", className: "input", placeholder: "Enter resource name", value: resourceName, onChange: e => setResourceName(e.target.value), required: true, disabled: submitting })] }), _jsxs("div", { className: "flex gap-2 justify-end", children: [_jsx("button", { type: "button", className: "btn-secondary", onClick: handleCloseForm, disabled: submitting, children: "Cancel" }), _jsx("button", { type: "submit", className: "btn-success disabled:opacity-50", disabled: submitting || !resourceName.trim(), children: submitting ? 'Adding...' : 'Add' })] })] })] }) })), _jsx("div", { className: "table-container", children: loadingBookings ? (_jsx("div", { className: "p-6 text-text-secondary", children: "Loading..." })) : errorBookings ? (_jsx("div", { className: "p-6 text-danger", children: errorBookings })) : bookings.length === 0 ? (_jsx("div", { className: "p-6 text-text-secondary", children: "No bookings found." })) : (_jsx("div", { children: bookings
+                        .filter((b) => {
+                        try {
+                            const content = typeof b.content === 'string' ? JSON.parse(b.content) : b.content;
+                            return content.bookingResourceName !== undefined;
+                        }
+                        catch {
+                            return false;
+                        }
+                    })
+                        .map((b) => {
+                        let name = '';
+                        let id = b.id || b.Id;
+                        try {
+                            const content = typeof b.content === 'string' ? JSON.parse(b.content) : b.content;
+                            name = content.bookingResourceName || '';
+                        }
+                        catch { }
+                        return (_jsxs("div", { className: "table-row", children: [_jsxs("div", { children: [_jsx("div", { className: "font-medium text-text-primary", children: name }), _jsx("div", { className: "text-xs text-text-secondary", children: id })] }), _jsxs("div", { className: "flex gap-2", children: [_jsx("button", { onClick: () => navigate(`/dashboard/bookings/configure/${id}`), className: "btn-primary text-sm", title: "Configure", children: "Configure" }), _jsx("button", { className: "btn-danger text-sm disabled:opacity-50", onClick: () => handleDeleteBooking(id), disabled: deletingId === id, title: "Delete", children: deletingId === id ? 'Deleting...' : 'Delete' })] })] }, id));
+                    }) })) })] }));
 };
 export default BookingManagerPage;

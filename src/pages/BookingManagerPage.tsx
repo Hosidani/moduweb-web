@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const BookingManagerPage = () => {
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [resourceName, setResourceName] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -92,33 +94,46 @@ const BookingManagerPage = () => {
   }
 
   return (
-    <div className="p-6 space-y-4 bg-gray-100 min-h-screen">
-  <h2 className="text-2xl font-bold mb-4 text-black">Booking Manager</h2>
-      <button
-        className="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-700"
-        onClick={handleOpenForm}
-      >
-        Add booking resource
-      </button>
+    <div className="content-wrapper">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold text-text-primary">Booking Manager</h2>
+        <div className="flex gap-3">
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="btn-secondary"
+          >
+            Back
+          </button>
+          <button
+            onClick={handleOpenForm}
+            className="btn-success"
+          >
+            Add booking resource
+          </button>
+        </div>
+      </div>
 
       {showForm && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <div className="bg-white rounded shadow-lg p-6 w-full max-w-sm">
-            <h3 className="text-lg font-bold mb-4">Add Booking Resource</h3>
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 fade-in">
+          <div className="card p-6 w-full max-w-sm slide-up">
+            <h3 className="text-lg font-semibold text-text-primary mb-4">Add Booking Resource</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input
-                type="text"
-                className="border px-3 py-2 rounded w-full"
-                placeholder="Resource name"
-                value={resourceName}
-                onChange={e => setResourceName(e.target.value)}
-                required
-                disabled={submitting}
-              />
+              <div className="form-group">
+                <label className="form-label">Resource name</label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="Enter resource name"
+                  value={resourceName}
+                  onChange={e => setResourceName(e.target.value)}
+                  required
+                  disabled={submitting}
+                />
+              </div>
               <div className="flex gap-2 justify-end">
                 <button
                   type="button"
-                  className="px-3 py-2 rounded bg-gray-300 hover:bg-gray-400"
+                  className="btn-secondary"
                   onClick={handleCloseForm}
                   disabled={submitting}
                 >
@@ -126,7 +141,7 @@ const BookingManagerPage = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-3 py-2 rounded bg-green-600 text-white font-bold hover:bg-green-700"
+                  className="btn-success disabled:opacity-50"
                   disabled={submitting || !resourceName.trim()}
                 >
                   {submitting ? 'Adding...' : 'Add'}
@@ -138,16 +153,15 @@ const BookingManagerPage = () => {
       )}
 
       {/* List bookings from backend */}
-      <div className="bg-white rounded shadow p-6 mt-4 border border-gray-200">
-        <h3 className="font-bold mb-4 text-black text-lg">All Booking Resources</h3>
+      <div className="table-container">
         {loadingBookings ? (
-          <div className="text-gray-500">Loading...</div>
+          <div className="p-6 text-text-secondary">Loading...</div>
         ) : errorBookings ? (
-          <div className="text-red-600">{errorBookings}</div>
+          <div className="p-6 text-danger">{errorBookings}</div>
         ) : bookings.length === 0 ? (
-          <div className="text-gray-500">No bookings found.</div>
+          <div className="p-6 text-text-secondary">No bookings found.</div>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <div>
             {bookings
               .filter((b) => {
                 try {
@@ -165,21 +179,21 @@ const BookingManagerPage = () => {
                   name = content.bookingResourceName || '';
                 } catch {}
                 return (
-                  <li key={id} className="py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                    <div className="flex flex-col md:flex-row md:items-center gap-2">
-                      <span className="text-black font-medium text-base">{name}</span>
-                      <span className="text-xs text-gray-400">{id}</span>
+                  <div key={id} className="table-row">
+                    <div>
+                      <div className="font-medium text-text-primary">{name}</div>
+                      <div className="text-xs text-text-secondary">{id}</div>
                     </div>
-                    <div className="flex gap-2 mt-2 md:mt-0">
-                      <a
-                        href={`/dashboard/bookings/configure/${id}`}
-                        className="px-3 py-1 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 text-sm transition"
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => navigate(`/dashboard/bookings/configure/${id}`)}
+                        className="btn-primary text-sm"
                         title="Configure"
                       >
                         Configure
-                      </a>
+                      </button>
                       <button
-                        className="px-3 py-1 rounded bg-red-500 text-white font-semibold hover:bg-red-700 text-sm transition disabled:opacity-60"
+                        className="btn-danger text-sm disabled:opacity-50"
                         onClick={() => handleDeleteBooking(id)}
                         disabled={deletingId === id}
                         title="Delete"
@@ -187,10 +201,10 @@ const BookingManagerPage = () => {
                         {deletingId === id ? 'Deleting...' : 'Delete'}
                       </button>
                     </div>
-                  </li>
+                  </div>
                 );
               })}
-          </ul>
+          </div>
         )}
       </div>
     </div>
