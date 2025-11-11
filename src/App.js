@@ -10,8 +10,9 @@ import BookingPage from "./pages/BookingPage";
 import CreateUserPage from "./pages/CreateUserPage";
 import BaseLayout from "./components/BaseLayout";
 import BookingResourceConfigPage from './pages/BookingResourceConfigPage';
+import AccountSettingsPage from './pages/AccountSettingsPage';
 console.log('API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
 function App() {
-    return (_jsx(Router, { children: _jsx(BaseLayout, { children: _jsxs(Routes, { children: [_jsx(Route, { path: "/", element: _jsx(Homepage, {}) }), "         ", _jsx(Route, { path: "/about", element: _jsx(AboutPage, {}) }), "   ", _jsx(Route, { path: "/privacy", element: _jsx(PrivacyPage, {}) }), " ", _jsx(Route, { path: "/login", element: _jsx(LoginPage, {}) }), _jsx(Route, { path: "/create-user", element: _jsx(CreateUserPage, {}) }), _jsx(Route, { path: "/dashboard", element: _jsx(DashboardPage, {}) }), _jsx(Route, { path: "/dashboard/bookings", element: _jsx(BookingManagerPage, {}) }), _jsx(Route, { path: "/booking", element: _jsx(BookingPage, {}) }), _jsx(Route, { path: "/dashboard/bookings/configure/:id", element: _jsx(BookingResourceConfigPage, {}) })] }) }) }));
+    return (_jsx(Router, { children: _jsx(BaseLayout, { children: _jsxs(Routes, { children: [_jsx(Route, { path: "/", element: _jsx(Homepage, {}) }), "         ", _jsx(Route, { path: "/about", element: _jsx(AboutPage, {}) }), "   ", _jsx(Route, { path: "/privacy", element: _jsx(PrivacyPage, {}) }), " ", _jsx(Route, { path: "/login", element: _jsx(LoginPage, {}) }), _jsx(Route, { path: "/create-user", element: _jsx(CreateUserPage, {}) }), _jsx(Route, { path: "/dashboard", element: _jsx(DashboardPage, {}) }), _jsx(Route, { path: "/dashboard/bookings", element: _jsx(BookingManagerPage, {}) }), _jsx(Route, { path: "/booking", element: _jsx(BookingPage, {}) }), _jsx(Route, { path: "/dashboard/bookings/configure/:id", element: _jsx(BookingResourceConfigPage, {}) }), _jsx(Route, { path: "/account/settings", element: _jsx(AccountSettingsPage, {}) })] }) }) }));
 }
 export default App;

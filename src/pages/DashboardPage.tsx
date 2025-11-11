@@ -1,15 +1,12 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { getUser, updateUser, deleteUser } from '../api/user'; // API file is still named user.js, but endpoints inside are now plural
+import { deleteUser } from '../api/user';
 import { useState, useEffect } from 'react';
-import { User } from '../api/user'; // API file is still named user.js, but endpoints inside are now plural
 
 const DashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  // Use user.id or user.userName depending on your backend
   const userId = user?.id;
-  const [userInfo, setUserInfo] = useState<User | null>(null);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -17,29 +14,13 @@ const DashboardPage = () => {
       navigate('/login');
       return;
     }
-    if (userId) {
-      getUser(userId)
-        .then((info) => setUserInfo(info))
-        .catch((err) => setMessage('Failed to load user info: ' + err.message));
-    }
-  }, [user, userId, navigate]);
-
-  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    try {
-  if (!userId || !userInfo) return;
-  await updateUser(userId, userInfo);
-      setMessage('User updated successfully!');
-    } catch (err) {
-      setMessage('Update failed: ' + (err instanceof Error ? err.message : 'Unknown error'));
-    }
-  };
+  }, [user, navigate]);
 
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete your account?')) {
       try {
-  if (!userId) return;
-  await deleteUser(userId);
+        if (!userId) return;
+        await deleteUser(userId);
         setMessage('Account deleted.');
         // Optionally: log out user and redirect
       } catch (err) {
@@ -49,48 +30,122 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-4 bg-gray-100 min-h-screen">
-      <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg text-black">
-          Besökare: Kommer snart statistik här.
+    <div className="bg-gray-50 min-h-screen">
+      {/* Header Section */}
+      <div className="px-8 py-6 flex justify-between items-center border-b border-gray-200">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-1">Welcome back, {user?.userName || 'User'}</p>
         </div>
-        <div
-          className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg text-black cursor-pointer hover:bg-blue-50"
-          onClick={() => navigate('/dashboard/bookings')}
-        >
-          <span className="font-bold">Bokningar</span>
-        </div>
-        <div className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg text-black">
-          Köp (sålda varor): Kommer snart statistik här.
-        </div>
-        <div className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg text-black">
-          Tillgängliga moduler att köpa: Kommer snart lista här.
-        </div>
-        <div className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg text-black">
-          Moduler som kunden köpte redan: Kommer snart lista här.
-        </div>
-        <div className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg text-black">
-          Betalningar: Kommer snart statistik här.
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate('/account/settings')}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            Account Settings
+          </button>
+          <button
+            onClick={handleDelete}
+            className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium"
+          >
+            Delete Account
+          </button>
         </div>
       </div>
-      {userInfo && (
-        <form onSubmit={handleUpdate}>
-          <input
-            value={userInfo.userName}
-            onChange={e => setUserInfo({ ...userInfo, userName: e.target.value })}
-            placeholder="Username"
-          />
-          <input
-            value={userInfo.email}
-            onChange={e => setUserInfo({ ...userInfo, email: e.target.value })}
-            placeholder="Email"
-          />
-          <button type="submit">Update</button>
-          <button type="button" onClick={handleDelete} style={{ marginLeft: '1rem', color: 'red' }}>Delete Account</button>
-        </form>
+
+      {/* Stats Grid */}
+      <div className="px-8 py-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">Overview</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Visitors</p>
+                <p className="text-2xl font-bold text-gray-900">Coming Soon</p>
+              </div>
+              <div className="bg-blue-100 p-3 rounded-full">
+                <span className="text-blue-600 text-xl">👥</span>
+              </div>
+            </div>
+          </div>
+
+          <div 
+            className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:bg-blue-50"
+            onClick={() => navigate('/dashboard/bookings')}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Bookings</p>
+                <p className="text-2xl font-bold text-green-600">Active</p>
+              </div>
+              <div className="bg-green-100 p-3 rounded-full">
+                <span className="text-green-600 text-xl">📅</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Sales</p>
+                <p className="text-2xl font-bold text-gray-900">Coming Soon</p>
+              </div>
+              <div className="bg-yellow-100 p-3 rounded-full">
+                <span className="text-yellow-600 text-xl">💰</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Available Modules</p>
+                <p className="text-2xl font-bold text-gray-900">Coming Soon</p>
+              </div>
+              <div className="bg-indigo-100 p-3 rounded-full">
+                <span className="text-indigo-600 text-xl">🧩</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Purchased Modules</p>
+                <p className="text-2xl font-bold text-gray-900">Coming Soon</p>
+              </div>
+              <div className="bg-cyan-100 p-3 rounded-full">
+                <span className="text-cyan-600 text-xl">✅</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Payments</p>
+                <p className="text-2xl font-bold text-gray-900">Coming Soon</p>
+              </div>
+              <div className="bg-pink-100 p-3 rounded-full">
+                <span className="text-pink-600 text-xl">💳</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Messages */}
+      {message && (
+        <div className="px-8 py-4">
+          <div className={`p-4 rounded-lg font-medium ${
+            message.includes('fail') 
+              ? 'bg-red-100 text-red-800 border border-red-200' 
+              : 'bg-green-100 text-green-800 border border-green-200'
+          }`}>
+            {message}
+          </div>
+        </div>
       )}
-      {message && <div style={{ color: message.includes('fail') ? 'red' : 'green' }}>{message}</div>}
     </div>
   );
 };

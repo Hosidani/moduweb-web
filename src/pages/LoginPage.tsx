@@ -35,37 +35,39 @@ const LoginPage = () => {
   }
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen flex items-center justify-center">
-      <div className="bg-white rounded shadow p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4">Login Page</h2>
-        <p className="mb-6">Please log in to continue.</p>
+    <div className="fixed inset-0 bg-gray-100 flex items-center justify-center">
+      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md mx-4">
+        <h2 className="text-2xl font-bold mb-4 text-gray-900 text-center">Login Page</h2>
+        <p className="mb-6 text-gray-700 text-center">Please log in to continue.</p>
         <input
           type="text"
           placeholder="Username"
-          className="mb-4 p-2 border rounded w-full"
+          className="mb-4 p-3 border rounded-lg w-full bg-gray-700 placeholder-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          style={{ color: 'white !important' }}
           value={username}
           onChange={e => setUsername(e.target.value)}
         />
         <input
           type="password"
           placeholder="Password"
-          className="mb-6 p-2 border rounded w-full"
+          className="mb-6 p-3 border rounded-lg w-full bg-gray-700 placeholder-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          style={{ color: 'white !important' }}
           value={password}
           onChange={e => setPassword(e.target.value)}
         />
         <button
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full"
+          className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 w-full font-medium transition-colors"
           onClick={handleLogin}
         >
           Log In
         </button>
         <button
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-full mt-4"
+          className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 w-full mt-4 font-medium transition-colors"
           onClick={() => navigate('/create-user')}
         >
           Create User
         </button>
-        {error && <div className="text-red-600 mt-2">{error}</div>}
+        {error && <div className="text-red-600 mt-4 text-center font-medium">{error}</div>}
       </div>
     </div>
   );
