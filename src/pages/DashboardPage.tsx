@@ -1,15 +1,13 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { getUser, updateUser, deleteUser } from '../api/user'; // API file is still named user.js, but endpoints inside are now plural
+import { deleteUser } from '../api/user';
 import { useState, useEffect } from 'react';
-import { User } from '../api/user'; // API file is still named user.js, but endpoints inside are now plural
+import StatCard from '../components/StatCard';
 
 const DashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  // Use user.id or user.userName depending on your backend
   const userId = user?.id;
-  const [userInfo, setUserInfo] = useState<User | null>(null);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -17,29 +15,13 @@ const DashboardPage = () => {
       navigate('/login');
       return;
     }
-    if (userId) {
-      getUser(userId)
-        .then((info) => setUserInfo(info))
-        .catch((err) => setMessage('Failed to load user info: ' + err.message));
-    }
-  }, [user, userId, navigate]);
-
-  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    try {
-  if (!userId || !userInfo) return;
-  await updateUser(userId, userInfo);
-      setMessage('User updated successfully!');
-    } catch (err) {
-      setMessage('Update failed: ' + (err instanceof Error ? err.message : 'Unknown error'));
-    }
-  };
+  }, [user, navigate]);
 
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete your account?')) {
       try {
-  if (!userId) return;
-  await deleteUser(userId);
+        if (!userId) return;
+        await deleteUser(userId);
         setMessage('Account deleted.');
         // Optionally: log out user and redirect
       } catch (err) {
@@ -49,45 +31,68 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-4 bg-gray-100 min-h-screen">
-      <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg">
-          Besökare: Kommer snart statistik här.
+    <div className="content-wrapper">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-text-primary">Dashboard</h1>
+          <p className="text-text-secondary mt-1">Welcome back, {user?.userName || 'User'}</p>
         </div>
-        <div className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg">
-          Bokningar: Kommer snart statistik här.
-        </div>
-        <div className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg">
-          Köp (sålda varor): Kommer snart statistik här.
-        </div>
-        <div className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg">
-          Tillgängliga moduler att köpa: Kommer snart lista här.
-        </div>
-        <div className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg">
-          Moduler som kunden köpte redan: Kommer snart lista här.
-        </div>
-        <div className="bg-white rounded shadow p-4 border border-gray-300 hover:shadow-lg">
-          Betalningar: Kommer snart statistik här.
+
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/account/settings')}
+            className="btn-primary"
+          >
+            Account Settings
+          </button>
+          <button 
+            onClick={handleDelete}
+            className="btn-danger"
+          >
+            Delete Account
+          </button>
         </div>
       </div>
-      {userInfo && (
-        <form onSubmit={handleUpdate}>
-          <input
-            value={userInfo.userName}
-            onChange={e => setUserInfo({ ...userInfo, userName: e.target.value })}
-            placeholder="Username"
-          />
-          <input
-            value={userInfo.email}
-            onChange={e => setUserInfo({ ...userInfo, email: e.target.value })}
-            placeholder="Email"
-          />
-          <button type="submit">Update</button>
-          <button type="button" onClick={handleDelete} style={{ marginLeft: '1rem', color: 'red' }}>Delete Account</button>
-        </form>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <StatCard 
+          title="Visitors" 
+          value="Coming Soon" 
+        />
+        <StatCard 
+          title="Bookings" 
+          value="Active" 
+          highlight="success" 
+          onOpen={() => navigate('/dashboard/bookings')} 
+        />
+        <StatCard 
+          title="Sales" 
+          value="Coming Soon" 
+        />
+        <StatCard 
+          title="Available Modules" 
+          value="Coming Soon" 
+        />
+        <StatCard 
+          title="Purchased Modules" 
+          value="Coming Soon" 
+        />
+        <StatCard 
+          title="Payments" 
+          value="Coming Soon" 
+        />
+      </div>
+
+      {/* Messages */}
+      {message && (
+        <div className={
+          message.includes('fail') 
+            ? 'alert-danger' 
+            : 'alert-success'
+        }>
+          {message}
+        </div>
       )}
-      {message && <div style={{ color: message.includes('fail') ? 'red' : 'green' }}>{message}</div>}
     </div>
   );
 };
